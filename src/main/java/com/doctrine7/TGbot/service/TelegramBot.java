@@ -1,6 +1,8 @@
 package com.doctrine7.TGbot.service;
 
 import com.doctrine7.TGbot.config.BotConfig;
+import com.doctrine7.TGbot.config.ResponseToSqlConfig;
+import com.doctrine7.TGbot.model.SQLDatabaseConnection;
 import com.doctrine7.TGbot.model.User;
 import com.doctrine7.TGbot.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +31,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private ResponseToSqlConfig configSql;
 
 	public TelegramBot(BotConfig config) {
 		this.config = config;
@@ -120,7 +125,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 	}
 
 	private void scheduleToday(long chatId) throws TelegramApiException {
-		String answerText = "расписание на сегодня для id=" + chatId;
+		String answerText = "расписание на сегодня для id=" + chatId+"\n";
+		SQLDatabaseConnection request = new SQLDatabaseConnection(configSql);
+		request.sendRequest(LocalDate.now());
+		if (request.getResponse().length()>4000){
+			answerText = answerText + "\n" + request.getResponse().substring(0,4000);
+		} else {
+			answerText = answerText + request.getResponse();
+		}
 		sendMessageToId(chatId, answerText);
 	}
 

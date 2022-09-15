@@ -33,6 +33,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 	private UserRepository userRepository;
 	@Autowired
 	private ResponseToSqlConfig configSql;
+	@Autowired
+	private SQLDatabaseConnection connection;
 
 	public TelegramBot(BotConfig config) {
 		this.config = config;
@@ -126,18 +128,23 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 	private void scheduleToday(long chatId) throws TelegramApiException {
 		String answerText = "расписание на сегодня для id=" + chatId+"\n";
-		SQLDatabaseConnection request = new SQLDatabaseConnection(configSql);
-		request.sendRequest(LocalDate.now());
-		if (request.getResponse().length()>4000){
-			answerText = answerText + "\n" + request.getResponse().substring(0,4000);
+		connection.sendRequest(LocalDate.now());
+		if (connection.getResponse().length()>4000){
+			answerText = answerText + "\n" + connection.getResponse().substring(0,4000);
 		} else {
-			answerText = answerText + request.getResponse();
+			answerText = answerText + connection.getResponse();
 		}
 		sendMessageToId(chatId, answerText);
 	}
 
 	private void scheduleTomorrow(long chatId) throws TelegramApiException {
-		String answerText = "расписание на завтра для id=" + chatId;
+		String answerText = "расписание на завтра для id=" + chatId+"\n";
+		connection.sendRequest(LocalDate.now().plusDays(1));
+		if (connection.getResponse().length()>4000){
+			answerText = answerText + "\n" + connection.getResponse().substring(0,4000);
+		} else {
+			answerText = answerText + connection.getResponse();
+		}
 		sendMessageToId(chatId, answerText);
 	}
 	private void sendMessageToId(long chatId, String textToSend) throws TelegramApiException {

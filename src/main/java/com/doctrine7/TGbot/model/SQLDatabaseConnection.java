@@ -3,6 +3,7 @@ package com.doctrine7.TGbot.model;
 
 import com.doctrine7.TGbot.config.ResponseToSqlConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 
 @Slf4j
+@Component
 public class SQLDatabaseConnection {
 
 	private String response = null;

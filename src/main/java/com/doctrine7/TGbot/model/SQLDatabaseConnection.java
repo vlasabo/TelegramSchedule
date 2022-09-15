@@ -2,6 +2,7 @@ package com.doctrine7.TGbot.model;
 
 
 import com.doctrine7.TGbot.config.ResponseToSqlConfig;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,26 +14,30 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 
-
+@Slf4j
 public class SQLDatabaseConnection {
 
-	ResultSet resultSet = null;
-	String response = null;
+	private String response = null;
 
-
-	final ResponseToSqlConfig config;
-	final String userSQLname;
-	final String userSQLpwd;
-	final String connectionUrl;
+	private final ResponseToSqlConfig config;
+	private final String userSQLname;
+	private final String userSQLpwd;
+	private final String database;
+	private final String connectionUrl;
+	private final String address;
+	private final String port;
 
 
 	public SQLDatabaseConnection(ResponseToSqlConfig config) {
 		this.config = config;
-		this.userSQLname = config.getBotName();
-		this.userSQLpwd = config.getToken();
-		this.connectionUrl = "jdbc:sqlserver://192.168.1.211:1433;"
+		this.userSQLname = config.getName();
+		this.userSQLpwd = config.getPassword();
+		this.database = config.getDatabase();
+		this.address=config.getAddress();
+		this.port = config.getPort();
+		this.connectionUrl = "jdbc:sqlserver://"+address+":"+port+";"
 				+ "encrypt=false;"
-				+ "database=dorabotka;"
+				+ "database=" + database + ";"
 				+ "user=" + userSQLname + ";"
 				+ "password=" + userSQLpwd + ";"
 				+ "trustServerCertificate=false;"
@@ -53,13 +58,13 @@ public class SQLDatabaseConnection {
 			String stringDate = date.plusYears(2000).format(formatterForRequest); //+2000 cause 1C+mssql work strange
 			String selectSql =
 					"SELECT u._Description as procedura, o._Fld1043, s._Description as sotr, p._Description as pacient\n" +
-							"FROM [dorabotka].[dbo].[_InfoRg970] AS o\n" +
-							"LEFT JOIN  [dorabotka].[dbo].[_Reference16] AS u ON u._IDRRef = o._Fld1041RRef\n" +
-							"LEFT JOIN [dorabotka].[dbo].[_Reference17] AS s ON s._IDRRef = o._Fld1040_RRRef\n" +
-							"LEFT JOIN [dorabotka].[dbo].[_Reference8] AS p ON p._IDRRef = o._Fld1042RRef\n" +
+							"FROM ["+database+"].[dbo].[_InfoRg970] AS o\n" +
+							"LEFT JOIN  ["+database+"].[dbo].[_Reference16] AS u ON u._IDRRef = o._Fld1041RRef\n" +
+							"LEFT JOIN ["+database+"].[dbo].[_Reference17] AS s ON s._IDRRef = o._Fld1040_RRRef\n" +
+							"LEFT JOIN ["+database+"].[dbo].[_Reference8] AS p ON p._IDRRef = o._Fld1042RRef\n" +
 							"WHERE o._Period='" + stringDate + "'\n" + "ORDER BY o._Fld1043";
 
-			resultSet = statement.executeQuery(selectSql);
+			ResultSet resultSet = statement.executeQuery(selectSql);
 			StringBuilder sb = new StringBuilder();
 
 			while (resultSet.next()) {
@@ -72,9 +77,9 @@ public class SQLDatabaseConnection {
 			}
 
 			response = sb.toString();
-
+			log.info("запрошено расписание на дату "+date);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			log.error("Ошибка при запросе расписания! \n"+e.getMessage());
 		}
 	}
 }

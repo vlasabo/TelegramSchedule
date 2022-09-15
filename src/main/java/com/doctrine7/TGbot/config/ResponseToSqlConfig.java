@@ -11,8 +11,17 @@ import org.springframework.context.annotation.PropertySource;
 public class ResponseToSqlConfig {
 
 	@Value("${userSQL.name}")
-	String botName;
+	String name;
 
 	@Value("${userSQL.pwd}")
-	String token;
+	String password;
+
+	@Value("${database.name}")
+	String database;
+
+	@Value("${database.address}")
+	String address;
+
+	@Value("${database.port}")
+	String port;
 }

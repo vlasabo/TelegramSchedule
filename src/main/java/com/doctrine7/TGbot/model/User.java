@@ -1,11 +1,11 @@
 package com.doctrine7.TGbot.model;
 
 import lombok.Data;
-import lombok.Setter;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 
 @Data
 @Entity(name = "usersDataTable")
@@ -18,9 +18,12 @@ public class User {
 	private String firstName;
 	private String lastName;
 	private String userName;
-	private String employee;
+	private ArrayList<String> employees=new ArrayList<>();
 	private Timestamp registeredAt;
 	private int registrationAttempts;
 	private boolean registrationPassed;
 
+	public void addEmployee(String employee){
+		this.employees.add(employee);
+	}
 }

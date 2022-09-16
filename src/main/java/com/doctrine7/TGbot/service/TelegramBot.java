@@ -49,7 +49,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		this.config = config;
 		List<BotCommand> listOfCommands = new ArrayList<>();
 		listOfCommands.add(new BotCommand("/start", "Регистрация участника"));
-		listOfCommands.add(new BotCommand("/addreg", "Добавление расписания к рассылке"));
+		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
 		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
 		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
 		try {
@@ -139,7 +139,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 						log.error(e.getMessage());
 					}
 					break;
-				case "/addReg":
+				case "/addreg":
 					if (isRegistered(chatId)) {
 						text = REGISTRATION_TEXT;
 					} else {
@@ -189,7 +189,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 		Optional<User> user = userRepository.findById(chatId);
 		String employee = message.getText().substring(message.getText().indexOf(" "));
 		if (user.isPresent()) {
-			user.get().setEmployee(employee);
+			user.get().addEmployee(employee);
+			userRepository.save(user.get());
 			sendMessageToId(chatId, String.format("Сотрудник %s успешно связан с вашим id ", employee));
 		}
 	}

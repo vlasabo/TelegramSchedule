@@ -167,19 +167,28 @@ public class TelegramBot extends TelegramLongPollingBot {
 	}
 
 	private void updateUser(long chatId, Message message) throws TelegramApiException {
-		Optional<User> user = userRepository.findById(chatId);
+		Optional<User> userOpt = userRepository.findById(chatId);
 		String employeeToRequest = message.getText().substring(message.getText().indexOf(" ") + 1);
 		String employee = connection.sendRegistrationRequest(employeeToRequest);
-		if (user.isPresent()) {
-			user.get().setRegistrationAttempts(0); //обнулим попытки регистрации, пароль введен верно
+		if (userOpt.isPresent()) {
+			User user = userOpt.get();
+			user.setRegistrationAttempts(0); //обнулим попытки регистрации, пароль введен верно
 			if (employee.equals("")) {
-				userRepository.save(user.get());
+				userRepository.save(user);
 				sendMessageToId(chatId, String.format("Сотрудник %s не найден в 1С!", employee));
 				return;
 			}
-			user.get().addEmployee(employee);
-			userRepository.save(user.get());
+			user.addEmployee(employee);
 			sendMessageToId(chatId, String.format("Сотрудник %s успешно связан с вашим id ", employee));
+			var listOfRelatedEmployees = connection.checkRelatedEmployees(employee);
+			if (listOfRelatedEmployees.size() > 0) {
+				listOfRelatedEmployees.stream().forEach(user::addEmployee);
+			}
+			if (user.getEmployees().size() > 1) {
+				sendMessageToId(chatId, "так же получаете расписание для: " + user.allEmployeesToMessage());
+			}
+			userRepository.save(user);
+
 		}
 	}
 

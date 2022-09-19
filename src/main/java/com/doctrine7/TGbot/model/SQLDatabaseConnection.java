@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -70,7 +72,7 @@ public class SQLDatabaseConnection {
 			}
 
 			String response = sb.toString();
-			log.info("requested schedule for the date " + date);
+			log.info("requested schedule for the date {}", date);
 			return response;
 		} catch (SQLException e) {
 			log.error("Error when requesting a schedule! \n" + e.getMessage());
@@ -78,7 +80,7 @@ public class SQLDatabaseConnection {
 		return "";
 	}
 
-	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С"
+	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С". Полные тёзки не поддерживаются
 
 		try {
 			Connection connection = DriverManager.getConnection(connectionUrl);
@@ -93,12 +95,37 @@ public class SQLDatabaseConnection {
 
 
 			if (resultSet.next()) {
-				log.info("new SQL request for add employee" + name);
+				log.info("new SQL request for add employee {}", name);
 				return resultSet.getString("_Description");
 			}
 		} catch (SQLException e) {
 			log.error("Error when add employee! \n" + e.getMessage());
 		}
 		return "";
+	}
+
+	public List<String> checkRelatedEmployees(String name) {
+		List<String> relatedEmployees = new ArrayList<>();
+		try {
+			Connection connection = DriverManager.getConnection(connectionUrl);
+			Statement statement = connection.createStatement();
+			String selectSql =
+					String.format("SELECT podsotr._Description as podsotrName,sotr._Description as sotrName\n" +
+							"FROM [dorabotka].[dbo].[_Reference1710] as podsotr\n" +
+							"INNER JOIN [dorabotka].[dbo].[_Reference17] as sotr ON podsotr._Fld4753RRef = sotr._IDRRef\n" +
+							"WHERE sotr._Description='%s'", name);
+
+			ResultSet resultSet = statement.executeQuery(selectSql);
+
+
+			while (resultSet.next()) {
+				String emp = resultSet.getString("podsotrName");
+				log.info("add related employee {}", emp);
+				relatedEmployees.add(emp);
+			}
+		} catch (SQLException e) {
+			log.error("Error when add employee! \n" + e.getMessage());
+		}
+		return relatedEmployees;
 	}
 }

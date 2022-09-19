@@ -5,11 +5,7 @@ import com.doctrine7.TGbot.config.ResponseToSqlConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -18,8 +14,6 @@ import java.time.format.FormatStyle;
 @Slf4j
 @Component
 public class SQLDatabaseConnection {
-
-	private String response = ""; //not null cause we have .length() in TelegramBot
 
 	private final ResponseToSqlConfig config;
 	private final String userSQLname;
@@ -46,11 +40,8 @@ public class SQLDatabaseConnection {
 				+ "loginTimeout=30;";
 	}
 
-	public String getResponse() {
-		return response;
-	}
 
-	public void sendRequest(LocalDate date) { //TODO:после добавления авторизации добавить в запрос параметр "сотрудник"
+	public String sendScheduleRequest(LocalDate date) { //TODO:после добавления авторизации добавить в запрос параметр
 		try {
 			Connection connection = DriverManager.getConnection(connectionUrl);
 			Statement statement = connection.createStatement();
@@ -78,10 +69,36 @@ public class SQLDatabaseConnection {
 						.append("\n");
 			}
 
-			response = sb.toString();
+			String response = sb.toString();
 			log.info("requested schedule for the date " + date);
+			return response;
 		} catch (SQLException e) {
 			log.error("Error when requesting a schedule! \n" + e.getMessage());
 		}
+		return "";
+	}
+
+	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С"
+
+		try {
+			Connection connection = DriverManager.getConnection(connectionUrl);
+			Statement statement = connection.createStatement();
+			String selectSql =
+					String.format("SELECT _Description\n" +
+							"  FROM [dorabotka].[dbo].[_Reference17] as sotr\n" +
+							"  WHERE sotr._Fld963!=0x01 /*уволен*/ AND sotr._Marked=0x00 /*пометка удаления*/" +
+							"  AND sotr._Description='%s'", name);
+
+			ResultSet resultSet = statement.executeQuery(selectSql);
+
+
+			if (resultSet.next()) {
+				log.info("new SQL request for add employee" + name);
+				return resultSet.getString("_Description");
+			}
+		} catch (SQLException e) {
+			log.error("Error when add employee! \n" + e.getMessage());
+		}
+		return "";
 	}
 }

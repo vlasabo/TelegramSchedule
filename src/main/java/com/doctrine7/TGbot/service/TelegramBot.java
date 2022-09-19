@@ -31,14 +31,12 @@ import java.util.Optional;
 public class TelegramBot extends TelegramLongPollingBot {
 
 	final BotConfig config;
-
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private ResponseToSqlConfig configSql;
 	@Autowired
 	private SQLDatabaseConnection connection;
-	private String password;
 	private static final String REGISTRATION_TEXT = "Введите одним сообщением В ОТВЕТ НА ЭТО текущий пароль (узнать " +
 			"можно у системного администратора) " +
 			"и полное ФИО (или название кабинета) как в 1С, например:\n\n" +
@@ -75,48 +73,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			String text = update.getMessage().getText(); //command
 			long chatId = update.getMessage().getChatId();
-			password = new PasswordGenerator().getActualPassword();
 			Optional<User> optionalUser = userRepository.findById(chatId);
 
-			//TODO: вынести это всё в отдельный логический блок
 			if (optionalUser.isPresent()) { //если пользователь зарегистрирован
-
-				//и превышены попытки добавления расписания
-				if (optionalUser.get().getRegistrationAttempts() >= REGISTRATION_ATTEMPTS) {
-					try {
-						sendMessageToId(chatId, "Увы, пользователь отключен за превышение попыток регистрации");
-						return;
-					} catch (TelegramApiException e) {
-						log.error("Попытка регистрации заблокированного пользователя");
-					}
-				}
-			}
-
-			if (update.getMessage().isReply()
-					&& REGISTRATION_TEXT.equals(update.getMessage().getReplyToMessage().getText())
-					&& isRegistered(chatId)) {
-
-				if (text.contains(password)) {
-					try {
-						updateUser(chatId, update.getMessage());
-					} catch (TelegramApiException e) {
-						log.error(e.getMessage());
-					}
+				if (checkBannedUsers(optionalUser.get(), chatId)) { //и превышены попытки добавления расписания
 					return;
-				} else {
-					User user = userRepository.findById(chatId).get();
-					user.setRegistrationAttempts(user.getRegistrationAttempts() + 1);
-					userRepository.save(user);
-					try {
-						sendMessageToId(chatId, "У вас осталось " + (REGISTRATION_ATTEMPTS - user.getRegistrationAttempts()) + " попыток");
-						return;
-					} catch (TelegramApiException e) {
-						log.error(e.getMessage());
-					}
 				}
 			}
 
-			switch (text) {
+			if (checkScheduleUserRegistration(update, chatId, text)) { //попытка добавления расписания?
+				return;
+			}
+
+			switch (text) { //не забанен и это не регистрация
 				case "/start":
 					try {
 						regCommand(chatId);
@@ -154,7 +123,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 					break;
 				default:
 					try {
-						sendMessageToId(chatId, "Command not found!");
+						sendMessageToId(chatId, "Команда не найдена!");
 						log.debug("unrecognized command " + text + " from user @" + update.getMessage().getChat().getUserName());
 					} catch (TelegramApiException e) {
 						log.error(e.getMessage());
@@ -162,6 +131,18 @@ public class TelegramBot extends TelegramLongPollingBot {
 			}
 
 		}
+	}
+
+	private boolean checkBannedUsers(User user, Long chatId) {
+		if (user.getRegistrationAttempts() >= REGISTRATION_ATTEMPTS) {
+			try {
+				sendMessageToId(chatId, "Увы, пользователь отключен за превышение попыток регистрации");
+				return true;
+			} catch (TelegramApiException e) {
+				log.error("Попытка регистрации заблокированного пользователя");
+			}
+		}
+		return false;
 	}
 
 
@@ -187,8 +168,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 	private void updateUser(long chatId, Message message) throws TelegramApiException {
 		Optional<User> user = userRepository.findById(chatId);
-		String employee = message.getText().substring(message.getText().indexOf(" "));
+		String employeeToRequest = message.getText().substring(message.getText().indexOf(" ") + 1);
+		String employee = connection.sendRegistrationRequest(employeeToRequest);
 		if (user.isPresent()) {
+			user.get().setRegistrationAttempts(0); //обнулим попытки регистрации, пароль введен верно
+			if (employee.equals("")) {
+				userRepository.save(user.get());
+				sendMessageToId(chatId, String.format("Сотрудник %s не найден в 1С!", employee));
+				return;
+			}
 			user.get().addEmployee(employee);
 			userRepository.save(user.get());
 			sendMessageToId(chatId, String.format("Сотрудник %s успешно связан с вашим id ", employee));
@@ -206,22 +194,22 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 	private void scheduleToday(long chatId) throws TelegramApiException {
 		String answerText = "расписание на сегодня для id=" + chatId + "\n";
-		connection.sendRequest(LocalDate.now());
-		if (connection.getResponse().length() > 4000) {
-			answerText = answerText + "\n" + connection.getResponse().substring(0, 4000);
+		String answer = connection.sendScheduleRequest(LocalDate.now());
+		if (answer.length() > 4000) {
+			answerText = answerText + "\n" + answer.substring(0, 4000);
 		} else {
-			answerText = answerText + connection.getResponse();
+			answerText = answerText + answer;
 		}
 		sendMessageToId(chatId, answerText);
 	}
 
 	private void scheduleTomorrow(long chatId) throws TelegramApiException {
 		String answerText = "расписание на завтра для id=" + chatId + "\n";
-		connection.sendRequest(LocalDate.now().plusDays(1));
-		if (connection.getResponse().length() > 4000) {
-			answerText = answerText + "\n" + connection.getResponse().substring(0, 4000);
+		String answer = connection.sendScheduleRequest(LocalDate.now().plusDays(1));
+		if (answer.length() > 4000) {
+			answerText = answerText + "\n" + answer.substring(0, 4000);
 		} else {
-			answerText = answerText + connection.getResponse();
+			answerText = answerText + answer;
 		}
 		sendMessageToId(chatId, answerText);
 	}
@@ -236,5 +224,32 @@ public class TelegramBot extends TelegramLongPollingBot {
 		} catch (TelegramApiException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	private boolean checkScheduleUserRegistration(Update update, Long chatId, String text) {
+		if (update.getMessage().isReply()
+				&& REGISTRATION_TEXT.equals(update.getMessage().getReplyToMessage().getText())
+				&& isRegistered(chatId)) {
+			String password = new PasswordGenerator().getActualPassword();
+			if (text.contains(password)) {
+				try {
+					updateUser(chatId, update.getMessage());
+				} catch (TelegramApiException e) {
+					log.error(e.getMessage());
+				}
+				return true;
+			} else {
+				User user = userRepository.findById(chatId).get();
+				user.setRegistrationAttempts(user.getRegistrationAttempts() + 1);
+				userRepository.save(user);
+				try {
+					sendMessageToId(chatId, "У вас осталось " + (REGISTRATION_ATTEMPTS - user.getRegistrationAttempts()) + " попыток");
+					return true;
+				} catch (TelegramApiException e) {
+					log.error(e.getMessage());
+				}
+			}
+		}
+		return false;
 	}
 }

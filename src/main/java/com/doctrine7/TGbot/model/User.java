@@ -21,7 +21,6 @@ public class User {
 	private ArrayList<String> employees=new ArrayList<>();
 	private Timestamp registeredAt;
 	private int registrationAttempts;
-	private boolean registrationPassed;
 
 	public void addEmployee(String employee){
 		this.employees.add(employee);

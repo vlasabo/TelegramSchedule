@@ -18,7 +18,9 @@ public class User {
 	private String firstName;
 	private String lastName;
 	private String userName;
+	//TODO: тут должен быть сет, иначе кто-нибудь дважды зарегистрируется
 	private ArrayList<String> employees = new ArrayList<>();
+
 	private Timestamp registeredAt;
 	private int registrationAttempts;
 

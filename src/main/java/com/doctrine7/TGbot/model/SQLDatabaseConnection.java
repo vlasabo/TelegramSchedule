@@ -43,7 +43,7 @@ public class SQLDatabaseConnection {
 	}
 
 
-	public String sendScheduleRequest(LocalDate date) { //TODO:после добавления авторизации добавить в запрос параметр
+	public List<Shedule> sendScheduleRequest(LocalDate date) {
 		try {
 			Connection connection = DriverManager.getConnection(connectionUrl);
 			Statement statement = connection.createStatement();
@@ -52,32 +52,37 @@ public class SQLDatabaseConnection {
 			DateTimeFormatter formatterForAnswer = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT);
 			String stringDate = date.plusYears(2000).format(formatterForRequest); //+2000 cause 1C+mssql work strange
 			String selectSql =
-					"SELECT u._Description as procedura, o._Fld1043, s._Description as sotr, p._Description as pacient\n" +
+					"SELECT u._Description as procedura, o._Fld1043, s._Description as sotr, p._Description as " +
+							"pacient, x._Description as podsotr\n" +
 							"FROM [" + database + "].[dbo].[_InfoRg970] AS o\n" +
 							"LEFT JOIN  [" + database + "].[dbo].[_Reference16] AS u ON u._IDRRef = o._Fld1041RRef\n" +
 							"LEFT JOIN [" + database + "].[dbo].[_Reference17] AS s ON s._IDRRef = o._Fld1040_RRRef\n" +
 							"LEFT JOIN [" + database + "].[dbo].[_Reference8] AS p ON p._IDRRef = o._Fld1042RRef\n" +
+							"LEFT JOIN [" + database + "].[dbo].[_Reference1710] AS x ON o._Fld1040_RRRef = x._IDRRef\n" +
 							"WHERE o._Period='" + stringDate + "'\n" + "ORDER BY o._Fld1043";
 
 			ResultSet resultSet = statement.executeQuery(selectSql);
 			StringBuilder sb = new StringBuilder();
-
+			List<Shedule> allShedule = new ArrayList<>();
 			while (resultSet.next()) {
-				sb.append(LocalDateTime.parse(resultSet.getString("_Fld1043"), formatterForParsing)
-								.format(formatterForAnswer)).append(" - ")
-						.append(resultSet.getString("procedura"))
-						.append(", ")
-						.append(resultSet.getString("pacient"))
-						.append("\n");
+				String sotr = resultSet.getString("sotr");
+				if (sotr == null) {
+					sotr = resultSet.getString("podsotr");
+				}
+				Shedule shedule = new Shedule(LocalDateTime.parse(resultSet.getString("_Fld1043"), formatterForParsing)
+						.format(formatterForAnswer)
+						, sotr
+						, resultSet.getString("pacient")
+						, resultSet.getString("procedura"));
+				allShedule.add(shedule);
 			}
 
-			String response = sb.toString();
 			log.info("requested schedule for the date {}", date);
-			return response;
+			return allShedule;
 		} catch (SQLException e) {
 			log.error("Error when requesting a schedule! \n" + e.getMessage());
 		}
-		return "";
+		return null;
 	}
 
 	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С". Полные тёзки не поддерживаются

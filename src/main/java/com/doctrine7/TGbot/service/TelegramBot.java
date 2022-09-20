@@ -2,10 +2,7 @@ package com.doctrine7.TGbot.service;
 
 import com.doctrine7.TGbot.config.BotConfig;
 import com.doctrine7.TGbot.config.ResponseToSqlConfig;
-import com.doctrine7.TGbot.model.PasswordGenerator;
-import com.doctrine7.TGbot.model.SQLDatabaseConnection;
-import com.doctrine7.TGbot.model.User;
-import com.doctrine7.TGbot.model.UserRepository;
+import com.doctrine7.TGbot.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,6 +47,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
 		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
 		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
+		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
 		try {
 			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
 		} catch (TelegramApiException e) {
@@ -95,17 +93,21 @@ public class TelegramBot extends TelegramLongPollingBot {
 					}
 					break;
 				case "/today":
-					try {
-						scheduleToday(chatId);
-					} catch (TelegramApiException e) {
-						log.error(e.getMessage());
+					if (optionalUser.isPresent()) {
+						try {
+							scheduleByDate(chatId, optionalUser.get(), LocalDate.now());
+						} catch (TelegramApiException e) {
+							log.error(e.getMessage());
+						}
 					}
 					break;
 				case "/tomorrow":
-					try {
-						scheduleTomorrow(chatId);
-					} catch (TelegramApiException e) {
-						log.error(e.getMessage());
+					if (optionalUser.isPresent()) {
+						try {
+							scheduleByDate(chatId, optionalUser.get(), LocalDate.now().plusDays(1));
+						} catch (TelegramApiException e) {
+							log.error(e.getMessage());
+						}
 					}
 					break;
 				case "/addreg":
@@ -115,6 +117,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 						text = "Вы не зарегистрированы, сначала введите команду /start";
 					}
 
+					try {
+						sendMessageToId(chatId, text);
+					} catch (TelegramApiException e) {
+						log.error(e.getMessage());
+					}
+					break;
+				case "/allemployees":
+					text = optionalUser.map(user -> "Вы получаете расписание для: "
+							+ user.allEmployeesToMessage()).orElse("Вы не зарегистрированы, сначала введите команду /start");
 					try {
 						sendMessageToId(chatId, text);
 					} catch (TelegramApiException e) {
@@ -201,9 +212,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 		sendMessageToId(chatId, answerText);
 	}
 
-	private void scheduleToday(long chatId) throws TelegramApiException {
-		String answerText = "расписание на сегодня для id=" + chatId + "\n";
-		String answer = connection.sendScheduleRequest(LocalDate.now());
+	private void scheduleByDate(long chatId, User user, LocalDate date) throws TelegramApiException {
+		String answerText = "расписание на " + date + " для id=" + chatId + "\n";
+		List<Shedule> answerList = connection.sendScheduleRequest(date);
+		SheduleService sheduleService = new SheduleService(answerList);
+		StringBuilder sb = new StringBuilder();
+		var listShedule = sheduleService.actualizeByEmployee(user);
+		listShedule.stream().forEach(sh -> sb.append(sh.toString()));
+		String answer = sb.toString();
 		if (answer.length() > 4000) {
 			answerText = answerText + "\n" + answer.substring(0, 4000);
 		} else {
@@ -212,16 +228,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 		sendMessageToId(chatId, answerText);
 	}
 
-	private void scheduleTomorrow(long chatId) throws TelegramApiException {
-		String answerText = "расписание на завтра для id=" + chatId + "\n";
-		String answer = connection.sendScheduleRequest(LocalDate.now().plusDays(1));
-		if (answer.length() > 4000) {
-			answerText = answerText + "\n" + answer.substring(0, 4000);
-		} else {
-			answerText = answerText + answer;
-		}
-		sendMessageToId(chatId, answerText);
-	}
 
 	private void sendMessageToId(long chatId, String textToSend) throws TelegramApiException {
 		SendMessage outputMessage = new SendMessage();

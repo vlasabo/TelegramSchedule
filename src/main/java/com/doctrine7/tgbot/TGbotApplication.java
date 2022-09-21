@@ -1,4 +1,4 @@
-package com.doctrine7.TGbot;
+package com.doctrine7.tgbot;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

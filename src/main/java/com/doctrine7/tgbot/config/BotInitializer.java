@@ -1,6 +1,6 @@
-package com.doctrine7.TGbot.config;
+package com.doctrine7.tgbot.config;
 
-import com.doctrine7.TGbot.service.TelegramBot;
+import com.doctrine7.tgbot.service.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;

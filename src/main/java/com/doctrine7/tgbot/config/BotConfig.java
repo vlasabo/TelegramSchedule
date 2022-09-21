@@ -1,4 +1,4 @@
-package com.doctrine7.TGbot.config;
+package com.doctrine7.tgbot.config;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;

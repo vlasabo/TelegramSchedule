@@ -1,7 +1,7 @@
-package com.doctrine7.TGbot.service;
+package com.doctrine7.tgbot.service;
 
-import com.doctrine7.TGbot.model.Shedule;
-import com.doctrine7.TGbot.model.User;
+import com.doctrine7.tgbot.model.Shedule;
+import com.doctrine7.tgbot.model.User;
 
 import java.util.ArrayList;
 import java.util.List;

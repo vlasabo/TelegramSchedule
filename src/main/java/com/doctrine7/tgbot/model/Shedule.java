@@ -1,4 +1,4 @@
-package com.doctrine7.TGbot.model;
+package com.doctrine7.tgbot.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

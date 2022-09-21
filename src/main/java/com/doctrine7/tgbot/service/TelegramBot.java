@@ -1,8 +1,8 @@
-package com.doctrine7.TGbot.service;
+package com.doctrine7.tgbot.service;
 
-import com.doctrine7.TGbot.config.BotConfig;
-import com.doctrine7.TGbot.config.ResponseToSqlConfig;
-import com.doctrine7.TGbot.model.*;
+import com.doctrine7.tgbot.config.BotConfig;
+import com.doctrine7.tgbot.config.ResponseToSqlConfig;
+import com.doctrine7.tgbot.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

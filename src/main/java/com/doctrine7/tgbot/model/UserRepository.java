@@ -1,4 +1,4 @@
-package com.doctrine7.TGbot.model;
+package com.doctrine7.tgbot.model;
 
 import org.springframework.data.repository.CrudRepository;
 

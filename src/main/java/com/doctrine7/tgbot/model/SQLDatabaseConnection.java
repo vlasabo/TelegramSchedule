@@ -1,7 +1,7 @@
-package com.doctrine7.TGbot.model;
+package com.doctrine7.tgbot.model;
 
 
-import com.doctrine7.TGbot.config.ResponseToSqlConfig;
+import com.doctrine7.tgbot.config.ResponseToSqlConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

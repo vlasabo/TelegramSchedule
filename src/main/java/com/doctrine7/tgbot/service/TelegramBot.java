@@ -229,7 +229,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 	}
 
 
-	private void sendMessageToId(long chatId, String textToSend) throws TelegramApiException {
+	public void sendMessageToId(long chatId, String textToSend) throws TelegramApiException {
 		SendMessage outputMessage = new SendMessage();
 		outputMessage.setChatId(chatId);
 		outputMessage.setText(textToSend);

@@ -3,7 +3,7 @@ package com.doctrine7.tgbot.service;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SheduleUpdateSender {
+public class SheduleUpdateMessageCreater {
 	private final String lastEmployee;
 	private final String lastProcedure;
 	private final String lastPatient;
@@ -13,8 +13,8 @@ public class SheduleUpdateSender {
 	private final String patient;
 	private final String time;
 
-	public SheduleUpdateSender(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
-							   String employee, String procedure, String patient, String time) {
+	public SheduleUpdateMessageCreater(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
+									   String employee, String procedure, String patient, String time) {
 		this.lastEmployee = lastEmployee;
 		this.lastProcedure = lastProcedure;
 		this.lastPatient = lastPatient;
@@ -34,7 +34,7 @@ public class SheduleUpdateSender {
 			sb.append("Пациент ").append(patient).append(" был добавлен на ").append(time).append(", процедура ")
 					.append(procedure);
 			employeeAndMessage.put(employee, sb.toString());
-			sb.setLength(0);
+			return employeeAndMessage;
 		}
 
 		if (!lastEmployee.equals(employee)) {//Изменение сотрудника. Сформируем два сообщения для каждого
@@ -44,17 +44,27 @@ public class SheduleUpdateSender {
 			sb.append("Пациент ").append(patient).append(" был добавлен на ").append(time).append(", процедура ")
 					.append(procedure);
 			employeeAndMessage.put(employee, sb.toString());
-			sb.setLength(0);
+			return employeeAndMessage;
 		}
 
-		if (lastEmployee.equals(employee) & lastProcedure.equals(procedure) & lastPatient.equals(patient)) {
+		if (lastProcedure.equals(procedure) & lastPatient.equals(patient)) {
 			//Изменение времени расписания
 			//     ОповещениеВК.отправитьСообщениеСотруднику(СотрОпов1,"Пациент "+ объект.Пациент.Наименование +
 			//     " был перенесён с " + Лев(Формат(объект.ВремяНачала1,"ДЛФ=В"),5)+ " на " + Лев(Формат(объект.ВремяНачала,"ДЛФ=В"),5) + ", процедура " + объект.Процедура);
 			sb.append("Пациент ").append(patient).append(" был перенесён с ").append(lastTime).append(" на ")
 					.append(time).append(", процедура ").append(procedure);
 			employeeAndMessage.put(employee, sb.toString());
+			return employeeAndMessage;
 		}
+
+		String message =
+				sb.append("Произошли изменения,\n    БЫЛО: ").append(lastProcedure).append(" у ").append(lastEmployee)
+						.append(", процедура ").append(lastProcedure).append(" в ").append(lastTime)
+						.append(" у пациента ").append(lastPatient).append(",\n   СТАЛО: ")
+						.append(procedure).append(" у ").append(employee).append(", процедура ").append(procedure)
+						.append(" в ").append(time).append(" у пациента ").append(patient).toString();
+		employeeAndMessage.put(lastEmployee, message);
+		employeeAndMessage.put(employee, message);
 		return employeeAndMessage;
 	}
 }

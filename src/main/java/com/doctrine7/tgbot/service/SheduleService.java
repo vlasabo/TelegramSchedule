@@ -15,8 +15,9 @@ public class SheduleService {
 
 	public List<Shedule> actualizeByEmployee(User user) {
 		List<Shedule> actual = new ArrayList<>();
+		var userEmployeesList = user.getEmployees();
 		for (Shedule shedule : allShedule) {
-			if (user.getEmployees().contains(shedule.getEmployee())) {
+			if (userEmployeesList.contains(shedule.getEmployee())) {
 				actual.add(shedule);
 			}
 		}

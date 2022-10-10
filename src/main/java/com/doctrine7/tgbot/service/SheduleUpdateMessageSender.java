@@ -1,20 +1,27 @@
 package com.doctrine7.tgbot.service;
 
+import com.doctrine7.tgbot.model.User;
+import com.doctrine7.tgbot.model.UserRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class SheduleUpdateMessageCreater {
-	private final String lastEmployee;
-	private final String lastProcedure;
-	private final String lastPatient;
-	private final String lastTime;
-	private final String employee;
-	private final String procedure;
-	private final String patient;
-	private final String time;
+@Slf4j
+public class SheduleUpdateMessageSender {
+	private String lastEmployee;
+	private String lastProcedure;
+	private String lastPatient;
+	private String lastTime;
+	private String employee;
+	private String procedure;
+	private String patient;
+	private String time;
 
-	public SheduleUpdateMessageCreater(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
-									   String employee, String procedure, String patient, String time) {
+
+	public SheduleUpdateMessageSender(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
+									  String employee, String procedure, String patient, String time) {
 		this.lastEmployee = lastEmployee;
 		this.lastProcedure = lastProcedure;
 		this.lastPatient = lastPatient;
@@ -25,12 +32,21 @@ public class SheduleUpdateMessageCreater {
 		this.time = time;
 	}
 
-	public Map<String, String> getMessagesWhatsHappening() {
+	public SheduleUpdateMessageSender() {
+
+	}
+
+	private Map<String, String> getMessagesWhatsHappening() {
+		if (lastPatient.equals(patient) && lastEmployee.equals(employee) && lastProcedure.equals(procedure)
+				&& lastTime.equals(time)) {
+			return null; //изменили комментарий, подтверждение или что-то еще несущественное для отправки
+		}
+
 		HashMap<String, String> employeeAndMessage = new HashMap<>();
 		StringBuilder sb = new StringBuilder();
 
-		if (lastEmployee.equals("") & lastProcedure.equals("")) {//Добавление пациента изменением пустой клетки
-			// расписания
+		if (lastPatient.equals("") & lastProcedure.equals("")) {//Добавление пациента изменением пустой клетки
+			// расписания или добавление новой процедуры
 			sb.append("Пациент ").append(patient).append(" был добавлен на ").append(time).append(", процедура ")
 					.append(procedure);
 			employeeAndMessage.put(employee, sb.toString());
@@ -48,9 +64,6 @@ public class SheduleUpdateMessageCreater {
 		}
 
 		if (lastProcedure.equals(procedure) & lastPatient.equals(patient)) {
-			//Изменение времени расписания
-			//     ОповещениеВК.отправитьСообщениеСотруднику(СотрОпов1,"Пациент "+ объект.Пациент.Наименование +
-			//     " был перенесён с " + Лев(Формат(объект.ВремяНачала1,"ДЛФ=В"),5)+ " на " + Лев(Формат(объект.ВремяНачала,"ДЛФ=В"),5) + ", процедура " + объект.Процедура);
 			sb.append("Пациент ").append(patient).append(" был перенесён с ").append(lastTime).append(" на ")
 					.append(time).append(", процедура ").append(procedure);
 			employeeAndMessage.put(employee, sb.toString());
@@ -67,4 +80,24 @@ public class SheduleUpdateMessageCreater {
 		employeeAndMessage.put(employee, message);
 		return employeeAndMessage;
 	}
+
+
+	public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository) throws TelegramApiException {
+		var mapResultEmployeeMessage = getMessagesWhatsHappening();
+		if (mapResultEmployeeMessage == null) {
+			return;
+		}
+		var allUsersIterable = userRepository.findAll();
+
+		for (Map.Entry<String, String> entry : mapResultEmployeeMessage.entrySet()) {
+			for (User user : allUsersIterable) {
+				if (user.getEmployees().contains(entry.getKey())) {
+					telegramBot.sendMessageToId(user.getChatId(), entry.getValue());
+					log.info("!sending a message about changes in the schedule to the employee {}, message = {}",
+							entry.getKey(), entry.getValue());
+				}
+			}
+		}
+	}
+
 }

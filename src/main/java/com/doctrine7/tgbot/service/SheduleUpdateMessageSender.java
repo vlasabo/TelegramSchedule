@@ -70,12 +70,19 @@ public class SheduleUpdateMessageSender {
 			return employeeAndMessage;
 		}
 
+		if (lastPatient.equals(patient) & !lastProcedure.equals(procedure) & lastTime.equals(time)) {
+			sb.append("У пациента ").append(patient).append(" в ").append(time).append(" изменилась процедура с ")
+					.append(lastProcedure).append(" на ").append(procedure);
+			employeeAndMessage.put(employee, sb.toString());
+			return employeeAndMessage;
+		}
+
 		String message =
-				sb.append("Произошли изменения,\n    БЫЛО: ").append(lastProcedure).append(" у ").append(lastEmployee)
-						.append(", процедура ").append(lastProcedure).append(" в ").append(lastTime)
-						.append(" у пациента ").append(lastPatient).append(",\n   СТАЛО: ")
-						.append(procedure).append(" у ").append(employee).append(", процедура ").append(procedure)
-						.append(" в ").append(time).append(" у пациента ").append(patient).toString();
+				sb.append("Произошли изменения,\n    БЫЛО: процедура ").append(lastProcedure)
+						.append(" у ").append(lastEmployee).append(" в ").append(lastTime)
+						.append(" у пациента ").append(lastPatient).append(",\n   СТАЛО: процедура ").append(procedure)
+						.append(" у ").append(employee).append(" в ").append(time)
+						.append(" у пациента ").append(patient).toString();
 		employeeAndMessage.put(lastEmployee, message);
 		employeeAndMessage.put(employee, message);
 		return employeeAndMessage;

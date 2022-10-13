@@ -45,6 +45,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		List<BotCommand> listOfCommands = new ArrayList<>();
 		listOfCommands.add(new BotCommand("/start", "Регистрация участника"));
 		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
+		listOfCommands.add(new BotCommand("/delreg", "Удаление сотрудника из рассылки"));
 		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
 		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
 		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
@@ -80,6 +81,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 			}
 
 			if (checkScheduleUserRegistration(update, chatId, text)) { //попытка добавления расписания?
+				return;
+			}
+
+			if (deleteScheduleUserRegistration(update, chatId, text)) { //попытка добавления расписания?
 				return;
 			}
 
@@ -124,8 +129,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 					}
 					break;
 				case "/allemployees":
-					text = optionalUser.map(user -> "Вы получаете расписание для: "
+					text = optionalUser.map(user -> "Вы получаете расписание для: \n"
 							+ user.allEmployeesToMessage()).orElse("Вы не зарегистрированы, сначала введите команду /start");
+					try {
+						sendMessageToId(chatId, text);
+					} catch (TelegramApiException e) {
+						log.error(e.getMessage());
+					}
+					break;
+				case "/delreg":
+					text = optionalUser.map(user -> "Вы получаете расписание для: \n"
+									+ user.allEmployeesToMessage() + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер сотрудника " +
+									"которого удаляем.")
+							.orElse("Вы не зарегистрированы, сначала введите команду /start");
 					try {
 						sendMessageToId(chatId, text);
 					} catch (TelegramApiException e) {
@@ -196,7 +212,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 				listOfRelatedEmployees.stream().forEach(user::addEmployee);
 			}
 			if (user.getEmployees().size() > 1) {
-				sendMessageToId(chatId, "так же получаете расписание для: " + user.allEmployeesToMessage());
+				sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage());
 			}
 			userRepository.save(user);
 
@@ -263,6 +279,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 				} catch (TelegramApiException e) {
 					log.error(e.getMessage());
 				}
+			}
+		}
+		return false;
+	}
+
+	private boolean deleteScheduleUserRegistration(Update update, Long chatId, String text) {
+		if (update.getMessage().isReply()
+				&& update.getMessage().getReplyToMessage().getText().contains("введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер" +
+				" сотрудника которого удаляем.")
+				&& isRegistered(chatId)) {
+
+			try {
+				int nom = Integer.parseInt(update.getMessage().getText());
+				User user = userRepository.findById(chatId).get();
+				user.deleteEmployee(nom);
+				userRepository.save(user);
+				sendMessageToId(chatId, "Сотрудник успешно удален из выдачи расписания");
+				return true;
+			} catch (TelegramApiException | NumberFormatException e) {
+				return false;
 			}
 		}
 		return false;

@@ -28,12 +28,20 @@ public class User {
 		this.employees.add(employee);
 	}
 
+	public void deleteEmployee(int nom) {
+		if ((nom <= employees.size()) && (nom > 0)) {
+			this.employees.remove(nom - 1);
+		}
+	}
+
 	public String allEmployeesToMessage() {
 		StringBuilder sb = new StringBuilder();
+		int i = 1;
 		for (String s : employees) {
-			sb.append(s).append(", ");
+			sb.append(i).append(": ").append(s).append(", \n");
+			i++;
 		}
-		sb.deleteCharAt(sb.length() - 2);
+		sb.deleteCharAt(sb.length() - 3);
 		return sb.toString();
 	}
 }

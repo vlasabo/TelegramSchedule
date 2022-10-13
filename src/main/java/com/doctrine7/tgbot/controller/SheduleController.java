@@ -20,13 +20,6 @@ public class SheduleController {
 	@Autowired
 	private UserRepository userRepository;
 
-	@PostMapping
-	@RequestMapping(value = "changeShedule/")
-	public void update(@RequestParam String employee, @RequestParam String patient,
-					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
-		new SheduleUpdateMessageSender("", "", "", ""
-				, employee, procedure, patient, time).sendSheduleUpdate(telegramBot, userRepository);
-	}
 
 	@PostMapping
 	@RequestMapping(value = "updateShedule/")

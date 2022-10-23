@@ -14,10 +14,14 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +52,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 		listOfCommands.add(new BotCommand("/delreg", "Удаление сотрудника из рассылки"));
 		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
 		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
+		listOfCommands.add(new BotCommand("/thismonth", "расписание на текущий месяц"));
+		listOfCommands.add(new BotCommand("/nextmonth", "расписание на следующий месяц"));
 		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
 		try {
 			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -84,7 +90,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 				return;
 			}
 
-			if (deleteScheduleUserRegistration(update, chatId, text)) { //попытка добавления расписания?
+			if (deleteScheduleUserRegistration(update, chatId, text)) { //попытка изменения расписания?
 				return;
 			}
 
@@ -146,6 +152,32 @@ public class TelegramBot extends TelegramLongPollingBot {
 						sendMessageToId(chatId, text);
 					} catch (TelegramApiException e) {
 						log.error(e.getMessage());
+					}
+					break;
+				case "/thismonth":
+					SendMessage outMess = new SendMessage();
+					LocalDate init = LocalDate.of(LocalDate.now().getYear(),
+							LocalDate.now().getMonth(), 1);
+					outMess.setReplyMarkup(initKeyboard(init));
+					outMess.setChatId(chatId);
+					outMess.setText("Выберите дату");
+					try {
+						execute(outMess);
+					} catch (TelegramApiException e) {
+						throw new RuntimeException(e);
+					}
+					break;
+				case "/nextmonth":
+					outMess = new SendMessage();
+					init = LocalDate.of(LocalDate.now().getYear(),
+							LocalDate.now().plusMonths(1).getMonth(), 1);
+					outMess.setReplyMarkup(initKeyboard(init));
+					outMess.setChatId(chatId);
+					outMess.setText("Выберите дату");
+					try {
+						execute(outMess);
+					} catch (TelegramApiException e) {
+						throw new RuntimeException(e);
 					}
 					break;
 				default:
@@ -241,6 +273,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		} else {
 			answerText = answerText + answer;
 		}
+
 		sendMessageToId(chatId, answerText);
 	}
 
@@ -302,5 +335,49 @@ public class TelegramBot extends TelegramLongPollingBot {
 			}
 		}
 		return false;
+	}
+
+	private ReplyKeyboardMarkup initKeyboard(LocalDate ld) {
+		//Создаем объект будущей клавиатуры и выставляем нужные настройки
+		var replyKeyboardMarkup = new ReplyKeyboardMarkup();
+		replyKeyboardMarkup.setResizeKeyboard(true); //подгоняем размер
+		replyKeyboardMarkup.setOneTimeKeyboard(true); //скрываем после использования
+
+		//Создаем список с рядами кнопок
+		ArrayList<KeyboardRow> keyboardRows = new ArrayList<>();
+		//Создаем один ряд кнопок и добавляем его в список
+		KeyboardRow keyboardRow = new KeyboardRow();
+		keyboardRows.add(keyboardRow);
+		//Добавляем кнопки с текстом в наш ряд
+		LocalDate endDay = ld.withDayOfMonth(ld.lengthOfMonth());
+		int i = 0;
+		int kbSize = 0;
+
+		while (ld.getDayOfWeek().getValue() > keyboardRow.size() + 1) { //подгоняем расположение кнопок под календарные дни
+			// недели  начале месяца
+			keyboardRow.add(" ");
+			kbSize++;
+			i++;
+		}
+
+		while (ld.isBefore(endDay) || ld.isEqual(endDay)) {
+			keyboardRow.add(new KeyboardButton(ld.format(DateTimeFormatter.ofPattern("dd.MM"))));
+			kbSize++;
+			ld = ld.plusDays(1);
+			i++;
+			if (i >= 7) {
+				keyboardRow = new KeyboardRow();
+				keyboardRows.add(keyboardRow);
+				i = 0;
+				kbSize = 0;
+			}
+		}
+		while (keyboardRow.size() < 7) { //а тут подгонка в конце
+			keyboardRow.add(" ");
+			i++;
+		}
+		//добавляем лист с одним рядом кнопок в главный объект
+		replyKeyboardMarkup.setKeyboard(keyboardRows);
+		return replyKeyboardMarkup;
 	}
 }

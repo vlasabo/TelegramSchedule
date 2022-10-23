@@ -86,7 +86,14 @@ public class SQLDatabaseConnection {
 	}
 
 	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С". Полные тёзки не поддерживаются
-
+		//TODO: разобраться с регулярками!
+		if ((name.toLowerCase().contains("select")) || name.toLowerCase().contains("drop")
+				|| name.toLowerCase().contains("insert") || name.toLowerCase().contains("update")
+				|| name.toLowerCase().contains("delete") || name.toLowerCase().contains("create")
+				|| name.toLowerCase().contains("--") || name.toLowerCase().contains("/*")) {
+			log.error("Запрещенные слова или символы в имени при регистрации!");
+			return "";
+		}
 		try {
 			Connection connection = DriverManager.getConnection(connectionUrl);
 			Statement statement = connection.createStatement();
@@ -96,6 +103,16 @@ public class SQLDatabaseConnection {
 							"  WHERE sotr._Fld963!=0x01 /*уволен*/ AND sotr._Marked=0x00 /*пометка удаления*/" +
 							"  AND sotr._Description='%s'", name);
 
+
+			//SqlRowSet likesRows = jdbcTemplate.queryForRowSet("SELECT _Description\n" +
+			//				"  FROM [dorabotka].[dbo].[_Reference17] as sotr\n" +
+			//				"  WHERE sotr._Fld963!=0x01 /*уволен*/ AND sotr._Marked=0x00 /*пометка удаления*/" +
+			//"  AND sotr._Description=?", name);
+			//if (likesRows.next()) {
+			// Optional<String> sotrOptional = likesRows.getString("_Description");
+			//if (sotrOptional.isPresent()) {
+			//   return sotrOptional.get()
+			//}
 			ResultSet resultSet = statement.executeQuery(selectSql);
 
 

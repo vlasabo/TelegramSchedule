@@ -62,7 +62,6 @@ public class SQLDatabaseConnection {
 							"WHERE o._Period='" + stringDate + "'\n" + "ORDER BY o._Fld1043";
 
 			ResultSet resultSet = statement.executeQuery(selectSql);
-			StringBuilder sb = new StringBuilder();
 			List<Shedule> allShedule = new ArrayList<>();
 			while (resultSet.next()) {
 				String sotr = resultSet.getString("sotr");
@@ -76,8 +75,6 @@ public class SQLDatabaseConnection {
 						, resultSet.getString("procedura"));
 				allShedule.add(shedule);
 			}
-
-			log.info("requested schedule for the date {}", date);
 			return allShedule;
 		} catch (SQLException e) {
 			log.error("Error when requesting a schedule! \n" + e.getMessage());
@@ -99,7 +96,7 @@ public class SQLDatabaseConnection {
 			Statement statement = connection.createStatement();
 			String selectSql =
 					String.format("SELECT _Description\n" +
-							"  FROM [dorabotka].[dbo].[_Reference17] as sotr\n" +
+							"  FROM [" + database + "].[dbo].[_Reference17] as sotr\n" +
 							"  WHERE sotr._Fld963!=0x01 /*уволен*/ AND sotr._Marked=0x00 /*пометка удаления*/" +
 							"  AND sotr._Description='%s'", name);
 
@@ -133,8 +130,8 @@ public class SQLDatabaseConnection {
 			Statement statement = connection.createStatement();
 			String selectSql =
 					String.format("SELECT podsotr._Description as podsotrName,sotr._Description as sotrName\n" +
-							"FROM [dorabotka].[dbo].[_Reference1710] as podsotr\n" +
-							"INNER JOIN [dorabotka].[dbo].[_Reference17] as sotr ON podsotr._Fld4753RRef = sotr._IDRRef\n" +
+							"FROM [" + database + "].[dbo].[_Reference1710] as podsotr\n" +
+							"INNER JOIN [" + database + "].[dbo].[_Reference17] as sotr ON podsotr._Fld4750RRef = sotr._IDRRef\n" +
 							"WHERE sotr._Description='%s'", name);
 
 			ResultSet resultSet = statement.executeQuery(selectSql);
@@ -142,11 +139,11 @@ public class SQLDatabaseConnection {
 
 			while (resultSet.next()) {
 				String emp = resultSet.getString("podsotrName");
-				log.info("add related employee {}", emp);
+				log.info("add sub_employee for employee {} ", emp);
 				relatedEmployees.add(emp);
 			}
 		} catch (SQLException e) {
-			log.error("Error when add employee! \n" + e.getMessage());
+			log.error("Error when add sub_employee for employee {}!", name + "\n" + e.getMessage());
 		}
 		return relatedEmployees;
 	}

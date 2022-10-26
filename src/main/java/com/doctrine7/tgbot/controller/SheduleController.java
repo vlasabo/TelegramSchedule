@@ -33,5 +33,11 @@ public class SheduleController {
 				lastTime, employee, procedure, patient, time).sendSheduleUpdate(telegramBot, userRepository);
 	}
 
+	@PostMapping
+	@RequestMapping(value = "deleteShedule/")
+	public void delete(@RequestParam String employee, @RequestParam String patient,
+					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
+		new SheduleUpdateMessageSender(employee, procedure, patient, time).sendSheduleUpdate(telegramBot, userRepository);
+	}
 
 }

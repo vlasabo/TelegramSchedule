@@ -14,7 +14,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -22,6 +24,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +46,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 			"и полное ФИО (или название кабинета) как в 1С, например:\n\n" +
 			"password Иванов Иван Иванович";
 	private static final int REGISTRATION_ATTEMPTS = 10;
+	private final DateTimeFormatter dateFormatForRecognizeDateFromButton = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
 	public TelegramBot(BotConfig config) {
 		this.config = config;
@@ -130,6 +134,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 					try {
 						sendMessageToId(chatId, text);
+						log.error("to user with chat id {} sent registration text", chatId);
 					} catch (TelegramApiException e) {
 						log.error(e.getMessage());
 					}
@@ -137,6 +142,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 				case "/allemployees":
 					text = optionalUser.map(user -> "Вы получаете расписание для: \n"
 							+ user.allEmployeesToMessage()).orElse("Вы не зарегистрированы, сначала введите команду /start");
+					log.warn("request for all employees for shedule sending");
 					try {
 						sendMessageToId(chatId, text);
 					} catch (TelegramApiException e) {
@@ -166,6 +172,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 					} catch (TelegramApiException e) {
 						throw new RuntimeException(e);
 					}
+					log.warn("this month with keyboard requested");
 					break;
 				case "/nextmonth":
 					outMess = new SendMessage();
@@ -179,26 +186,49 @@ public class TelegramBot extends TelegramLongPollingBot {
 					} catch (TelegramApiException e) {
 						throw new RuntimeException(e);
 					}
+					log.warn("next month with keyboard requested");
 					break;
 				default:
+					if (optionalUser.isPresent()) {
+						try {
+							LocalDate ldForShedule =
+									LocalDate.parse(text.concat(".").concat("" + LocalDate.now().getYear())
+											, dateFormatForRecognizeDateFromButton);
+
+							if (ldForShedule.getMonth().getValue() == 1 && LocalDate.now().getMonth().getValue() == 12) {
+								ldForShedule = ldForShedule.plusYears(1);
+							}
+							scheduleByDate(chatId, optionalUser.get(), ldForShedule);
+							break;
+						} catch (TelegramApiException e) {
+							throw new RuntimeException(e);
+						} catch (DateTimeParseException e) {
+							System.out.println(e.getMessage());
+						}
+					}
+
+
 					try {
 						sendMessageToId(chatId, "Команда не найдена!");
-						log.debug("unrecognized command " + text + " from user @" + update.getMessage().getChat().getUserName());
+						log.error("unrecognized command " + text + " from user @" + update.getMessage().getChat().getUserName());
 					} catch (TelegramApiException e) {
 						log.error(e.getMessage());
 					}
 			}
 
 		}
+
 	}
+
 
 	private boolean checkBannedUsers(User user, Long chatId) {
 		if (user.getRegistrationAttempts() >= REGISTRATION_ATTEMPTS) {
 			try {
+				log.error("Попытка регистрации заблокированного пользователя");
 				sendMessageToId(chatId, "Увы, пользователь отключен за превышение попыток регистрации");
 				return true;
 			} catch (TelegramApiException e) {
-				log.error("Попытка регистрации заблокированного пользователя");
+				log.error(e.getMessage());
 			}
 		}
 		return false;
@@ -219,7 +249,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 			user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
 
 			userRepository.save(user);
-			log.info("new user " + user);
 		} else {
 			log.error("Attempt to re-register the user " + message.getChat().getUserName());
 		}
@@ -235,6 +264,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 			if (employee.equals("")) {
 				userRepository.save(user);
 				sendMessageToId(chatId, String.format("Сотрудник %s не найден в 1С!", employee));
+				log.warn("new incorrect attempt to add employee {}for chat id {} ", employee, chatId);
 				return;
 			}
 			user.addEmployee(employee);
@@ -247,7 +277,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 				sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage());
 			}
 			userRepository.save(user);
-
+			log.warn("new correct attempt to add employee {} for chat id {} ", employee, chatId);
 		}
 	}
 
@@ -262,6 +292,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 	private void scheduleByDate(long chatId, User user, LocalDate date) throws TelegramApiException {
 		String answerText = "расписание на " + date + " для id=" + chatId + "\n";
+		log.warn("Requesting shedule for date {} by user {}, chat id = {}", date, user.getUserName(), chatId);
 		List<Shedule> answerList = connection.sendScheduleRequest(date);
 		SheduleService sheduleService = new SheduleService(answerList);
 		StringBuilder sb = new StringBuilder();
@@ -282,12 +313,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 		SendMessage outputMessage = new SendMessage();
 		outputMessage.setChatId(chatId);
 		outputMessage.setText(textToSend);
-
+		outputMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
 		try {
 			execute(outputMessage);
 		} catch (TelegramApiException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	private ReplyKeyboard removeCastomKeyboard() {
+		var ReplyMarkup = new ReplyKeyboardRemove();
+		return null;
 	}
 
 	private boolean checkScheduleUserRegistration(Update update, Long chatId, String text) {
@@ -306,6 +342,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 				User user = userRepository.findById(chatId).get();
 				user.setRegistrationAttempts(user.getRegistrationAttempts() + 1);
 				userRepository.save(user);
+				log.error("INCORRECT PASSWORD from user with chat id {}", chatId);
 				try {
 					sendMessageToId(chatId, "У вас осталось " + (REGISTRATION_ATTEMPTS - user.getRegistrationAttempts()) + " попыток");
 					return true;
@@ -376,7 +413,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 			keyboardRow.add(" ");
 			i++;
 		}
-		//добавляем лист с одним рядом кнопок в главный объект
 		replyKeyboardMarkup.setKeyboard(keyboardRows);
 		return replyKeyboardMarkup;
 	}

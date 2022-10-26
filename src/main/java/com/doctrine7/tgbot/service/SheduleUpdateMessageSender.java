@@ -18,6 +18,7 @@ public class SheduleUpdateMessageSender {
 	private String procedure;
 	private String patient;
 	private String time;
+	private boolean delete;
 
 
 	public SheduleUpdateMessageSender(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
@@ -30,6 +31,15 @@ public class SheduleUpdateMessageSender {
 		this.procedure = procedure;
 		this.patient = patient;
 		this.time = time;
+		this.delete = false;
+	}
+
+	public SheduleUpdateMessageSender(String employee, String procedure, String patient, String time) {
+		this.employee = employee;
+		this.procedure = procedure;
+		this.patient = patient;
+		this.time = time;
+		this.delete = true;
 	}
 
 	public SheduleUpdateMessageSender() {
@@ -37,13 +47,19 @@ public class SheduleUpdateMessageSender {
 	}
 
 	private Map<String, String> getMessagesWhatsHappening() {
+		HashMap<String, String> employeeAndMessage = new HashMap<>();
+		StringBuilder sb = new StringBuilder();
+
+		if (delete) {
+			sb.append("Удалена процедура ").append(procedure).append(" у ").append(patient).append(" в ").append(time);
+			employeeAndMessage.put(employee, sb.toString());
+			return employeeAndMessage;
+		}
+
 		if (lastPatient.equals(patient) && lastEmployee.equals(employee) && lastProcedure.equals(procedure)
 				&& lastTime.equals(time)) {
 			return null; //изменили комментарий, подтверждение или что-то еще несущественное для отправки
 		}
-
-		HashMap<String, String> employeeAndMessage = new HashMap<>();
-		StringBuilder sb = new StringBuilder();
 
 		if (lastPatient.equals("") & lastProcedure.equals("")) {//Добавление пациента изменением пустой клетки
 			// расписания или добавление новой процедуры

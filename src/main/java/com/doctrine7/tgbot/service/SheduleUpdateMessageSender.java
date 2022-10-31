@@ -1,5 +1,6 @@
 package com.doctrine7.tgbot.service;
 
+import com.doctrine7.tgbot.model.EmployeeRepository;
 import com.doctrine7.tgbot.model.User;
 import com.doctrine7.tgbot.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -105,7 +106,8 @@ public class SheduleUpdateMessageSender {
 	}
 
 
-	public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository) throws TelegramApiException {
+	public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository, EmployeeRepository employeeRepository)
+			throws TelegramApiException {
 		var mapResultEmployeeMessage = getMessagesWhatsHappening();
 		if (mapResultEmployeeMessage == null) {
 			return;
@@ -114,7 +116,7 @@ public class SheduleUpdateMessageSender {
 
 		for (Map.Entry<String, String> entry : mapResultEmployeeMessage.entrySet()) {
 			for (User user : allUsersIterable) {
-				if (user.getEmployees().contains(entry.getKey())) {
+				if (user.getEmployees(employeeRepository).contains(entry.getKey())) {
 					telegramBot.sendMessageToId(user.getChatId(), entry.getValue());
 					log.info("!sending a message about changes in the schedule to the employee {}, message = {}",
 							entry.getKey(), entry.getValue());

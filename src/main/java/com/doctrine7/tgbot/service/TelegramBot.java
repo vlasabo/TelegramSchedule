@@ -14,7 +14,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
@@ -37,6 +36,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 	final BotConfig config;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private EmployeeRepository employeeRepository;
 	@Autowired
 	private ResponseToSqlConfig configSql;
 	@Autowired
@@ -141,7 +142,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 					break;
 				case "/allemployees":
 					text = optionalUser.map(user -> "Вы получаете расписание для: \n"
-							+ user.allEmployeesToMessage()).orElse("Вы не зарегистрированы, сначала введите команду /start");
+							+ user.allEmployeesToMessage(employeeRepository)).orElse("Вы не зарегистрированы, сначала введите " +
+							"команду /start");
 					log.warn("request for all employees for shedule sending");
 					try {
 						sendMessageToId(chatId, text);
@@ -151,7 +153,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 					break;
 				case "/delreg":
 					text = optionalUser.map(user -> "Вы получаете расписание для: \n"
-									+ user.allEmployeesToMessage() + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер сотрудника " +
+									+ user.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+									"сотрудника " +
 									"которого удаляем.")
 							.orElse("Вы не зарегистрированы, сначала введите команду /start");
 					try {
@@ -264,17 +267,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 			if (employee.equals("")) {
 				userRepository.save(user);
 				sendMessageToId(chatId, String.format("Сотрудник %s не найден в 1С!", employee));
-				log.warn("new incorrect attempt to add employee {}for chat id {} ", employee, chatId);
+				log.warn("new incorrect attempt to add employee {} for chat id {} ", employee, chatId);
 				return;
 			}
-			user.addEmployee(employee);
+			user.addEmployee(employee, employeeRepository);
 			sendMessageToId(chatId, String.format("Сотрудник %s успешно связан с вашим id ", employee));
 			var listOfRelatedEmployees = connection.checkRelatedEmployees(employee);
 			if (listOfRelatedEmployees.size() > 0) {
-				listOfRelatedEmployees.stream().forEach(user::addEmployee);
+				listOfRelatedEmployees.stream().forEach(u -> user.addEmployee(u, employeeRepository));
 			}
-			if (user.getEmployees().size() > 1) {
-				sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage());
+			if (user.getEmployees(employeeRepository).size() > 1) {
+				sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage(employeeRepository));
 			}
 			userRepository.save(user);
 			log.warn("new correct attempt to add employee {} for chat id {} ", employee, chatId);
@@ -294,13 +297,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 		String answerText = "расписание на " + date + " для id=" + chatId + "\n";
 		log.warn("Requesting shedule for date {} by user {}, chat id = {}", date, user.getUserName(), chatId);
 		List<Shedule> answerList = connection.sendScheduleRequest(date);
-		SheduleService sheduleService = new SheduleService(answerList);
+		SheduleService sheduleService = new SheduleService(answerList, employeeRepository);
 		StringBuilder sb = new StringBuilder();
 		var listShedule = sheduleService.actualizeByEmployee(user);
 		listShedule.stream().forEach(sh -> sb.append(sh.toString()));
 		String answer = sb.toString();
 		if (answer.length() > 4000) {
 			answerText = answerText + "\n" + answer.substring(0, 4000);
+			sendMessageToId(chatId, answerText);
+			answerText = answer.substring(4000);
 		} else {
 			answerText = answerText + answer;
 		}
@@ -321,10 +326,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 		}
 	}
 
-	private ReplyKeyboard removeCastomKeyboard() {
-		var ReplyMarkup = new ReplyKeyboardRemove();
-		return null;
-	}
 
 	private boolean checkScheduleUserRegistration(Update update, Long chatId, String text) {
 		if (update.getMessage().isReply()
@@ -363,7 +364,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 			try {
 				int nom = Integer.parseInt(update.getMessage().getText());
 				User user = userRepository.findById(chatId).get();
-				user.deleteEmployee(nom);
+				user.deleteEmployee(nom, employeeRepository);
 				userRepository.save(user);
 				sendMessageToId(chatId, "Сотрудник успешно удален из выдачи расписания");
 				return true;

@@ -53,7 +53,9 @@ public class User {
 			sb.append(i).append(": ").append(s).append(", \n");
 			i++;
 		}
-		sb.deleteCharAt(sb.length() - 3);
+		if (sb.length() > 0) {
+			sb.deleteCharAt(sb.length() - 3);
+		}
 		return sb.toString();
 	}
 

@@ -42,7 +42,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 	private ResponseToSqlConfig configSql;
 	@Autowired
 	private SQLDatabaseConnection connection;
-	private static final String REGISTRATION_TEXT = "Введите одним сообщением В ОТВЕТ НА ЭТО текущий пароль (узнать " +
+	private static final String REGISTRATION_TEXT = "Введите одним сообщением ОТВЕТОМ НА ЭТО СООБЩЕНИЕ! текущий " +
+			"пароль (узнать " +
 			"можно у системного администратора) " +
 			"и полное ФИО (или название кабинета) как в 1С, например:\n\n" +
 			"password Иванов Иван Иванович";
@@ -192,7 +193,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 					log.warn("next month with keyboard requested");
 					break;
 				default:
-					if (optionalUser.isPresent()) {
+					if (optionalUser.isPresent() && text.length() == 5) {
 						try {
 							LocalDate ldForShedule =
 									LocalDate.parse(text.concat(".").concat("" + LocalDate.now().getYear())
@@ -250,10 +251,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 			user.setLastName(chat.getLastName());
 			user.setUserName(chat.getUserName());
 			user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
-
 			userRepository.save(user);
+			log.warn("user {} registered ",
+					(message.getChat().getUserName() == null) ? message.getChatId() : message.getChat().getUserName());
 		} else {
-			log.error("Attempt to re-register the user " + message.getChat().getUserName());
+			log.warn("Attempt to re-register the user {}",
+					(message.getChat().getUserName() == null) ? message.getChatId() : message.getChat().getUserName());
 		}
 	}
 
@@ -268,6 +271,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 				userRepository.save(user);
 				sendMessageToId(chatId, String.format("Сотрудник %s не найден в 1С!", employee));
 				log.warn("new incorrect attempt to add employee {} for chat id {} ", employee, chatId);
+				return;
+			}
+			if (user.getEmployees(employeeRepository).contains(employee)) {
+				userRepository.save(user);
+				sendMessageToId(chatId, String.format("Сотрудник %s уже добавлен!", employee));
 				return;
 			}
 			user.addEmployee(employee, employeeRepository);

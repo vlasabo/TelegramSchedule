@@ -3,11 +3,13 @@ package com.doctrine7.tgbot.service;
 import com.doctrine7.tgbot.model.EmployeeRepository;
 import com.doctrine7.tgbot.model.Shedule;
 import com.doctrine7.tgbot.model.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class SheduleService {
 	private final List<Shedule> allShedule;
 	@Autowired
@@ -26,6 +28,7 @@ public class SheduleService {
 				actual.add(shedule);
 			}
 		}
+		log.info("will get a schedule for {}", userEmployeesList);
 		return actual;
 	}
 }

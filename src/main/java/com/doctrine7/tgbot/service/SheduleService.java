@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class SheduleService {
@@ -23,9 +24,19 @@ public class SheduleService {
 	public List<Shedule> actualizeByEmployee(User user) {
 		List<Shedule> actual = new ArrayList<>();
 		var userEmployeesList = user.getEmployees(employeeRepository);
-		for (Shedule shedule : allShedule) {
-			if (userEmployeesList.contains(shedule.getEmployee())) {
-				actual.add(shedule);
+		if (user.getSeparatedShedule() == null || !user.getSeparatedShedule()) {
+			for (Shedule shedule : allShedule) {
+				if (userEmployeesList.contains(shedule.getEmployee())) {
+					actual.add(shedule);
+				}
+			}
+		} else {
+			for (String employee : userEmployeesList) {
+				for (Shedule shedule : allShedule) {
+					if (Objects.equals(shedule.getEmployee(), employee)) {
+						actual.add(shedule);
+					}
+				}
 			}
 		}
 		log.info("will get a schedule for {}", userEmployeesList);

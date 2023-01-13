@@ -27,6 +27,7 @@ public class User {
 	private String userName;
 	private Timestamp registeredAt;
 	private int registrationAttempts;
+	private Boolean separatedShedule;
 
 	public void addEmployee(String employeeName, EmployeeRepository employeeRepository) {
 		Employee emp = new Employee();

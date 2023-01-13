@@ -61,6 +61,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		listOfCommands.add(new BotCommand("/thismonth", "расписание на текущий месяц"));
 		listOfCommands.add(new BotCommand("/nextmonth", "расписание на следующий месяц"));
 		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
+		listOfCommands.add(new BotCommand("/separated", "Получать расписание раздельно/вместе"));
 		try {
 			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
 		} catch (TelegramApiException e) {
@@ -192,6 +193,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 					}
 					log.warn("next month with keyboard requested");
 					break;
+				case "/separated":
+					if (isRegistered(chatId)) {
+						try {
+							setSeparatedShedule(chatId);
+						} catch (TelegramApiException e) {
+							throw new RuntimeException(e);
+						}
+					}
+					break;
 				default:
 					if (optionalUser.isPresent() && text.length() == 5) {
 						try {
@@ -222,6 +232,27 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 		}
 
+	}
+
+	private void setSeparatedShedule(long chatId) throws TelegramApiException {
+		var userOpt = userRepository.findById(chatId);
+		String text;
+		if (userOpt.isPresent()) {
+			User user = userOpt.get();
+			if (user.getSeparatedShedule() == null) {
+				user.setSeparatedShedule(true);
+				text = "Вы будете получать раздельное расписание";
+			} else {
+				user.setSeparatedShedule(!user.getSeparatedShedule());
+				if (!user.getSeparatedShedule()) {
+					text = "Вы будете получать расписание на все кабинеты сразу";
+				} else {
+					text = "Вы будете получать раздельное расписание";
+				}
+			}
+			userRepository.save(user);
+			sendMessageToId(chatId, text);
+		}
 	}
 
 
@@ -282,7 +313,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 			sendMessageToId(chatId, String.format("Сотрудник %s успешно связан с вашим id ", employee));
 			var listOfRelatedEmployees = connection.checkRelatedEmployees(employee);
 			if (listOfRelatedEmployees.size() > 0) {
-				listOfRelatedEmployees.stream().forEach(u -> user.addEmployee(u, employeeRepository));
+				listOfRelatedEmployees.forEach(u -> user.addEmployee(u, employeeRepository));
 			}
 			if (user.getEmployees(employeeRepository).size() > 1) {
 				sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage(employeeRepository));
@@ -308,7 +339,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 		SheduleService sheduleService = new SheduleService(answerList, employeeRepository);
 		StringBuilder sb = new StringBuilder();
 		var listShedule = sheduleService.actualizeByEmployee(user);
-		listShedule.stream().forEach(sh -> sb.append(sh.toString()));
+		listShedule.forEach(sh -> sb.append(sh.toString()));
 		String answer = sb.toString();
 		if (answer.length() > 4000) {
 			answerText = answerText + "\n" + answer.substring(0, 4000);

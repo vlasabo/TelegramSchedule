@@ -1,7 +1,9 @@
 package com.doctrine7.tgbot.model;
 
 import com.google.common.collect.Streams;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -11,9 +13,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-@Data
+@Getter
+@Setter
 @Entity(name = "usersDataTable")
-
+@Slf4j
 public class User {
 
 	@Id
@@ -38,6 +41,7 @@ public class User {
 				Streams.stream(allEmp).distinct().filter(x -> Objects.equals(x.getUser_id(), this.chatId))
 						.collect(Collectors.toList());
 		if ((nom <= setOfEmployeesFromBd.size()) && (nom > 0)) {
+			log.warn("delete employee {} from user {}", setOfEmployeesFromBd.get(nom - 1), this.userName);
 			employeeRepository.delete(setOfEmployeesFromBd.get(nom - 1));
 		}
 	}

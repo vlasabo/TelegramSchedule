@@ -4,8 +4,8 @@ import com.doctrine7.tgbot.model.EmployeeRepository;
 import com.doctrine7.tgbot.model.UserRepository;
 import com.doctrine7.tgbot.service.SheduleUpdateMessageSender;
 import com.doctrine7.tgbot.service.TelegramBot;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,14 +14,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @RestController
 @Slf4j
+@RequiredArgsConstructor
 public class SheduleController {
 
-	@Autowired
-	private TelegramBot telegramBot;
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private EmployeeRepository employeeRepository;
+	private final TelegramBot telegramBot;
+
+	private final UserRepository userRepository;
+
+	private final EmployeeRepository employeeRepository;
 
 
 	@PostMapping

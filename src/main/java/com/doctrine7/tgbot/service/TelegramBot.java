@@ -82,7 +82,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 	@Override
 	public void onUpdateReceived(Update update) {
 
-		if (update.hasMessage() && update.getMessage().hasText()) {
+		if (update.hasMessage() && update.getMessage().hasText() && update.getMessage().getChatId() > 0) {
 			String text = update.getMessage().getText(); //command
 			long chatId = update.getMessage().getChatId();
 			Optional<User> optionalUser = userRepository.findById(chatId);

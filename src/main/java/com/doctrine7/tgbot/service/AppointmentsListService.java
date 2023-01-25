@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class AppointmentsListService {
 	private final TelegramBot telegramBot;
-	private final String NEW_DOCUMENT = "Создан новый лист назначений № ";
+	private final String NEW_DOCUMENT = "Создан новый лист назначений ";
 	private final String OLD_DOCUMENT = "Отредактирован существующий лист назначений № ";
 
 	public void prepareNotifications(AppointmentsList document, long groupId) {
@@ -27,13 +27,14 @@ public class AppointmentsListService {
 			sendChangeNotify(document, groupId);
 			return;
 		}
-		sendCreateNotify(document, groupId);
+		if (document.getIsNew()) {
+			sendCreateNotify(document, groupId);
+		}
 	}
 
 	private void sendCreateNotify(AppointmentsList document, long groupId) {
 		StringBuilder messageText = new StringBuilder(NEW_DOCUMENT);
-		messageText.append(document.getId())
-				.append(" на пациента ")
+		messageText.append(" на пациента ")
 				.append(document.getPatient())
 				.append(". Врачи: \n")
 				.append("невролог: ")
@@ -41,7 +42,8 @@ public class AppointmentsListService {
 				.append("реабилитолог: ")
 				.append("".equals(document.getRehabilitologist()) ? "-" : document.getRehabilitologist()).append("\n")
 				.append("логопед: ")
-				.append("".equals(document.getSpeechTherapist()) ? "-" : document.getSpeechTherapist());
+				.append("".equals(document.getSpeechTherapist()) ? "-" : document.getSpeechTherapist()).append("\n")
+				.append("Создал ").append(document.getEditor());
 
 		try {
 			telegramBot.sendMessageToId(groupId, messageText.toString());
@@ -54,7 +56,8 @@ public class AppointmentsListService {
 		StringBuilder messageText = new StringBuilder(OLD_DOCUMENT);
 		messageText.append(document.getId())
 				.append(" на пациента ")
-				.append(document.getPatient());
+				.append(document.getPatient()).append("\n")
+				.append("Отредактировал ").append(document.getEditor());
 
 		try {
 			telegramBot.sendMessageToId(groupId, messageText.toString());

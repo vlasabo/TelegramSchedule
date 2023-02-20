@@ -1,8 +1,8 @@
 package com.doctrine7.tgbot.config;
 
 import com.doctrine7.tgbot.service.TelegramBot;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -12,10 +12,10 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class BotInitializer {
 
-	@Autowired
-	TelegramBot bot;
+	private final TelegramBot bot;
 
 	@EventListener({ContextRefreshedEvent.class})
 	public void init() throws TelegramApiException {
@@ -26,4 +26,5 @@ public class BotInitializer {
 			log.error(e.getMessage());
 		}
 	}
+
 }

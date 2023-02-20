@@ -3,6 +3,7 @@ package com.doctrine7.tgbot.service;
 import com.doctrine7.tgbot.config.BotConfig;
 import com.doctrine7.tgbot.config.ResponseToSqlConfig;
 import com.doctrine7.tgbot.model.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,17 +32,13 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
+	private final BotConfig config;
+	private final UserRepository userRepository;
+	private  final EmployeeRepository employeeRepository;
 
-	final BotConfig config;
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private EmployeeRepository employeeRepository;
-	@Autowired
-	private ResponseToSqlConfig configSql;
-	@Autowired
-	private SQLDatabaseConnection connection;
+	private final SQLDatabaseConnection connection;
 	private static final String REGISTRATION_TEXT = "Введите одним сообщением ОТВЕТОМ НА ЭТО СООБЩЕНИЕ! текущий " +
 			"пароль (узнать " +
 			"можно у системного администратора) " +
@@ -50,24 +47,24 @@ public class TelegramBot extends TelegramLongPollingBot {
 	private static final int REGISTRATION_ATTEMPTS = 10;
 	private final DateTimeFormatter dateFormatForRecognizeDateFromButton = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-	public TelegramBot(BotConfig config) {
-		this.config = config;
-		List<BotCommand> listOfCommands = new ArrayList<>();
-		listOfCommands.add(new BotCommand("/start", "Регистрация участника"));
-		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
-		listOfCommands.add(new BotCommand("/delreg", "Удаление сотрудника из рассылки"));
-		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
-		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
-		listOfCommands.add(new BotCommand("/thismonth", "расписание на текущий месяц"));
-		listOfCommands.add(new BotCommand("/nextmonth", "расписание на следующий месяц"));
-		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
-		listOfCommands.add(new BotCommand("/separated", "Получать расписание раздельно/вместе"));
-		try {
-			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
-		} catch (TelegramApiException e) {
-			log.error(e.getMessage());
-		}
-	}
+//	public TelegramBot(BotConfig config) {
+//		this.config = config;
+//		List<BotCommand> listOfCommands = new ArrayList<>();
+//		listOfCommands.add(new BotCommand("/start", "Регистрация участника"));
+//		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
+//		listOfCommands.add(new BotCommand("/delreg", "Удаление сотрудника из рассылки"));
+//		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
+//		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
+//		listOfCommands.add(new BotCommand("/thismonth", "расписание на текущий месяц"));
+//		listOfCommands.add(new BotCommand("/nextmonth", "расписание на следующий месяц"));
+//		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
+//		listOfCommands.add(new BotCommand("/separated", "Получать расписание раздельно/вместе"));
+//		try {
+//			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
+//		} catch (TelegramApiException e) {
+//			log.error(e.getMessage());
+//		}
+//	}
 
 	@Override
 	public String getBotUsername() {
@@ -202,6 +199,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 						}
 					}
 					break;
+				case "/updateCommands":
+					updateCommands();
+					break;
 				default:
 					if (optionalUser.isPresent() && text.length() == 5) {
 						try {
@@ -232,6 +232,25 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 		}
 
+	}
+
+	private void updateCommands() { //todo: бот должен обновлять команды при старте или рестартовать после обновления
+		List<BotCommand> listOfCommands = new ArrayList<>();
+		listOfCommands.add(new BotCommand("/start", "Регистрация участника"));
+		listOfCommands.add(new BotCommand("/addreg", "Добавление сотрудника к рассылке"));
+		listOfCommands.add(new BotCommand("/delreg", "Удаление сотрудника из рассылки"));
+		listOfCommands.add(new BotCommand("/today", "Расписание на сегодня"));
+		listOfCommands.add(new BotCommand("/tomorrow", "Расписание на завтра"));
+		listOfCommands.add(new BotCommand("/thismonth", "расписание на текущий месяц"));
+		listOfCommands.add(new BotCommand("/nextmonth", "расписание на следующий месяц"));
+		listOfCommands.add(new BotCommand("/allemployees", "На кого получаю расписание"));
+		listOfCommands.add(new BotCommand("/separated", "Получать расписание раздельно/вместе"));
+		listOfCommands.add(new BotCommand("/test2", "test2"));
+		try {
+			execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), "ru"));
+		} catch (TelegramApiException e) {
+			log.error(e.getMessage());
+		}
 	}
 
 	private void setSeparatedShedule(long chatId) throws TelegramApiException {

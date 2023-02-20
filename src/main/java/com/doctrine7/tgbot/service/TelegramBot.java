@@ -356,6 +356,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 	public void sendMessageToId(long chatId, String textToSend) throws TelegramApiException {
 		SendMessage outputMessage = new SendMessage();
 		outputMessage.setChatId(chatId);
+		if (chatId < 0) {
+			outputMessage.enableMarkdownV2(true);
+		}
 		outputMessage.setText(textToSend);
 		outputMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
 		try {

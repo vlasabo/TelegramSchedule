@@ -84,6 +84,7 @@ public class SQLDatabaseConnection {
 
 	public String sendRegistrationRequest(String name) { // параметр "сотрудник из 1С". Полные тёзки не поддерживаются
 		//TODO: разобраться с регулярками!
+		//TODO: имя метода!
 		if ((name.toLowerCase().contains("select")) || name.toLowerCase().contains("drop")
 				|| name.toLowerCase().contains("insert") || name.toLowerCase().contains("update")
 				|| name.toLowerCase().contains("delete") || name.toLowerCase().contains("create")

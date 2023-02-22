@@ -2,28 +2,25 @@ import com.doctrine7.tgbot.config.BotConfig;
 import com.doctrine7.tgbot.model.*;
 import com.doctrine7.tgbot.model.exceptions.CustomBannedUserException;
 import com.doctrine7.tgbot.service.TelegramBot;
-
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
 import java.util.Optional;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
 public class BotTest {
-    @Value("${test.bot.name}")
-    private String botName;
-    @Value("${test.bot.token}")
-    private String token;
-
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -55,11 +52,11 @@ public class BotTest {
         employee = new Employee();
         employee.setId(33L);
         employee.setEmployee("test employee");
-        employee.setUser_id(3L);
+        employee.setUserId(3L);
 
         BotConfig botConfig = new BotConfig();
-        botConfig.setBotName(botName);
-        botConfig.setToken(token);
+        botConfig.setBotName(null);
+        botConfig.setToken(null);
         telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, sqlDatabaseConnection);
 
     }
@@ -158,5 +155,53 @@ public class BotTest {
 
         Assertions.assertDoesNotThrow(() ->
                 telegramBot.onUpdateReceived(update)); //not banned
+    }
+
+    @Test
+    void CorrectDeleteEmployeeFromUser() {
+        Mockito.when(userRepository.findById(3L))
+                .thenReturn(Optional.of(user3));
+        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
+                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
+        Chat chat = new Chat();
+        chat.setId(3L);
+        Message message = new Message();
+        message.setMessageId(1);
+        message.setChat(chat);
+        Message messageDelete = new Message();
+        messageDelete.setText("Вы получаете расписание для: \n"
+                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                "сотрудника " +
+                "которого удаляем.");
+        message.setReplyToMessage(messageDelete);
+        message.setText("1");
+        Update update = new Update();
+        update.setMessage(message);
+        Assertions.assertDoesNotThrow(() ->
+                telegramBot.onUpdateReceived(update));
+    }
+
+    @Test
+    void tryToDeleteEmployeeFromUserWithIncorrectNumberAnswerAndExpectNoException() {
+        Mockito.when(userRepository.findById(3L))
+                .thenReturn(Optional.of(user3));
+        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
+                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
+        Chat chat = new Chat();
+        chat.setId(3L);
+        Message message = new Message();
+        message.setMessageId(1);
+        message.setChat(chat);
+        Message messageDelete = new Message();
+        messageDelete.setText("Вы получаете расписание для: \n"
+                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                "сотрудника " +
+                "которого удаляем.");
+        message.setReplyToMessage(messageDelete);
+        message.setText("one");
+        Update update = new Update();
+        update.setMessage(message);
+        Assertions.assertDoesNotThrow(() ->
+                telegramBot.onUpdateReceived(update));
     }
 }

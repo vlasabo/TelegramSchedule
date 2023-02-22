@@ -1,12 +1,10 @@
 package com.doctrine7.tgbot.service;
 
 import com.doctrine7.tgbot.config.BotConfig;
-import com.doctrine7.tgbot.config.ResponseToSqlConfig;
 import com.doctrine7.tgbot.model.*;
 import com.doctrine7.tgbot.model.exceptions.CustomBannedUserException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -401,7 +399,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 && isRegistered(chatId)) {
 
             try {
-                int nom = Integer.parseInt(update.getMessage().getText());
+                int nom = Integer.parseInt(text);
                 User user = userRepository.findById(chatId).get();
                 user.deleteEmployee(nom, employeeRepository);
                 userRepository.save(user);

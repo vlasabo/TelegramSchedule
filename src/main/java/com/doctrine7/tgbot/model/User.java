@@ -19,53 +19,53 @@ import java.util.stream.Collectors;
 @Slf4j
 public class User {
 
-	@Id
-	private Long chatId;
+    @Id
+    private Long chatId;
 
-	private String firstName;
-	private String lastName;
-	private String userName;
-	private Timestamp registeredAt;
-	private int registrationAttempts;
-	private Boolean separatedShedule;
+    private String firstName;
+    private String lastName;
+    private String userName;
+    private Timestamp registeredAt;
+    private int registrationAttempts;
+    private Boolean separatedShedule;
 
-	public void addEmployee(String employeeName, EmployeeRepository employeeRepository) {
-		Employee emp = new Employee();
-		emp.setUser_id(this.chatId);
-		emp.setEmployee(employeeName);
-		employeeRepository.save(emp);
-	}
+    public void addEmployee(String employeeName, EmployeeRepository employeeRepository) {
+        Employee emp = new Employee();
+        emp.setUserId(this.chatId);
+        emp.setEmployee(employeeName);
+        employeeRepository.save(emp);
+    }
 
-	public void deleteEmployee(int nom, EmployeeRepository employeeRepository) {
-		var allEmp = employeeRepository.findAll();
-		var setOfEmployeesFromBd =
-				Streams.stream(allEmp).distinct().filter(x -> Objects.equals(x.getUser_id(), this.chatId))
-						.collect(Collectors.toList());
-		if ((nom <= setOfEmployeesFromBd.size()) && (nom > 0)) {
-			log.warn("delete employee {} from user {}", setOfEmployeesFromBd.get(nom - 1), this.userName);
-			employeeRepository.delete(setOfEmployeesFromBd.get(nom - 1));
-		}
-	}
+    public void deleteEmployee(int nom, EmployeeRepository employeeRepository) {
+        var setOfEmployeesFromBd =
+                employeeRepository.findAllByUserIdIs(chatId).stream()
+                        .distinct()
+                        .collect(Collectors.toList());
+        if ((nom <= setOfEmployeesFromBd.size()) && (nom > 0)) {
+            log.warn("delete employee {} from user {}", setOfEmployeesFromBd.get(nom - 1), this.userName);
+            employeeRepository.delete(setOfEmployeesFromBd.get(nom - 1));
+        }
+    }
 
-	public String allEmployeesToMessage(EmployeeRepository employeeRepository) {
-		StringBuilder sb = new StringBuilder();
-		int i = 1;
-		var allEmp = employeeRepository.findAll();
-		var setOfEmployeesFromBd =
-				Streams.stream(allEmp).distinct().filter(x -> Objects.equals(x.getUser_id(), this.chatId))
-						.map(Employee::getEmployee).collect(Collectors.toList());
-		for (String s : setOfEmployeesFromBd) {
-			sb.append(i).append(": ").append(s).append(", \n");
-			i++;
-		}
-		if (sb.length() > 0) {
-			sb.deleteCharAt(sb.length() - 3);
-		}
-		return sb.toString();
-	}
+    public String allEmployeesToMessage(EmployeeRepository employeeRepository) {
+        StringBuilder sb = new StringBuilder();
+        int i = 1;
+        var setOfEmployeesFromBd = employeeRepository.findAllByUserIdIs(chatId).stream()
+                .distinct()
+                .map(Employee::getEmployee)
+                .collect(Collectors.toList());
+        for (String s : setOfEmployeesFromBd) {
+            sb.append(i).append(": ").append(s).append(", \n");
+            i++;
+        }
+        if (sb.length() > 0) {
+            sb.deleteCharAt(sb.length() - 3);
+        }
+        return sb.toString();
+    }
 
-	public Set<String> getEmployees(EmployeeRepository employeeRepository) {
-		return Streams.stream(employeeRepository.findAll()).distinct().filter(x -> Objects.equals(x.getUser_id(), this.chatId))
-				.map(Employee::getEmployee).collect(Collectors.toSet());
-	}
+    public Set<String> getEmployees(EmployeeRepository employeeRepository) {
+        return Streams.stream(employeeRepository.findAll()).distinct().filter(x -> Objects.equals(x.getUserId(), this.chatId))
+                .map(Employee::getEmployee).collect(Collectors.toSet());
+    }
 }

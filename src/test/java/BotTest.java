@@ -30,7 +30,7 @@ public class BotTest {
     @Mock
     SQLDatabaseConnection sqlDatabaseConnection;
     @MockBean
-    PasswordGenerator passwordGenerator = new PasswordGenerator();
+    final PasswordGenerator passwordGenerator = new PasswordGenerator();
     @MockBean
     EmployeeService employeeService;
     TelegramBot telegramBot;

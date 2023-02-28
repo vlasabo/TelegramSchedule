@@ -353,7 +353,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(outputMessage);
         } catch (TelegramApiException e) {
-            log.error(e.getMessage());
+            log.error(
+                    String.format("problems with sending message to chatId %s, text = %s", chatId, textToSend) + e.getMessage());
         }
     }
 

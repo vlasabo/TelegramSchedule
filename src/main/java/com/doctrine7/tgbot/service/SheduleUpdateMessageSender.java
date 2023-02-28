@@ -17,12 +17,12 @@ public class SheduleUpdateMessageSender {
     private String lastProcedure;
     private String lastPatient;
     private String lastTime;
-    private String employee;
-    private String procedure;
-    private String patient;
-    private String time;
-    private boolean delete;
-    private EmployeeService employeeService;
+    private final String employee;
+    private final String procedure;
+    private final String patient;
+    private final String time;
+    private final boolean delete;
+    private final EmployeeService employeeService;
 
 
     public SheduleUpdateMessageSender(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,

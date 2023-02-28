@@ -48,20 +48,21 @@ public class SQLDatabaseConnection {
             //+2000 из-за особенностей хранения дат 1С в MSSQL
             String stringDate = date.plusYears(2000).format(formatterForRequest);
             String selectSql =
-                    "SELECT u._Description as procedure, o._Fld1043," +
-                            " s._Description as empl, p._Description as patient," +
-                            " x._Description as subEmpl " +
-                            "FROM [" + database + "].[dbo].[_InfoRg970] AS o " +
-                            "LEFT JOIN  [" + database +
-                            "].[dbo].[_Reference16] AS u ON u._IDRRef = o._Fld1041RRef " +
-                            "LEFT JOIN [" + database +
-                            "].[dbo].[_Reference17] AS s ON s._IDRRef = o._Fld1040_RRRef " +
-                            "LEFT JOIN [" + database +
-                            "].[dbo].[_Reference8] AS p ON p._IDRRef = o._Fld1042RRef " +
-                            "LEFT JOIN [" + database +
-                            "].[dbo].[_Reference1710] AS x ON o._Fld1040_RRRef = x._IDRRef " +
-                            "WHERE o._Period='" + stringDate + "' " +
-                            "ORDER BY o._Fld1043";
+                    new StringBuilder()
+                            .append("SELECT u._Description as procedure, o._Fld1043,")
+                            .append(" s._Description as empl, p._Description as patient,")
+                            .append(" x._Description as subEmpl ")
+                            .append("FROM [").append(database).append("].[dbo].[_InfoRg970] AS o ")
+                            .append("LEFT JOIN  [").append(database)
+                            .append("].[dbo].[_Reference16] AS u ON u._IDRRef = o._Fld1041RRef ")
+                            .append("LEFT JOIN [").append(database)
+                            .append("].[dbo].[_Reference17] AS s ON s._IDRRef = o._Fld1040_RRRef ")
+                            .append("LEFT JOIN [").append(database)
+                            .append("].[dbo].[_Reference8] AS p ON p._IDRRef = o._Fld1042RRef ")
+                            .append("LEFT JOIN [").append(database)
+                            .append("].[dbo].[_Reference1710] AS x ON o._Fld1040_RRRef = x._IDRRef ")
+                            .append("WHERE o._Period='").append(stringDate).append("' ")
+                            .append("ORDER BY o._Fld1043").toString();
 
             ResultSet resultSet = statement.executeQuery(selectSql);
             List<Shedule> allShedule = new ArrayList<>();
@@ -87,10 +88,10 @@ public class SQLDatabaseConnection {
     public String sendRegistrationRequest(String name) { // Параметр "сотрудник из 1С". Полные тёзки не поддерживаются
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);
-            String selectSql = "SELECT _Description " +
-                    "  FROM [" + database + "].[dbo].[_Reference17] as empl " +
-                    "  WHERE empl._Fld963!=0x01 /*уволен*/ AND empl._Marked=0x00 /*пометка удаления*/" +
-                    "  AND empl._Description=VALUES(?)";
+            String selectSql = new StringBuilder().append("SELECT _Description ")
+                    .append("  FROM [").append(database).append("].[dbo].[_Reference17] as empl ")
+                    .append("  WHERE empl._Fld963!=0x01 /*уволен*/ AND empl._Marked=0x00 /*пометка удаления*/")
+                    .append("  AND empl._Description=VALUES(?)").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
             ResultSet resultSet = statement.executeQuery(selectSql);
@@ -109,12 +110,12 @@ public class SQLDatabaseConnection {
         List<String> relatedEmployees = new ArrayList<>();
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);
-            String selectSql =
-                    "SELECT subEmpl._Description as subEmplName, empl._Description as emplName " +
-                            "FROM [" + database + "].[dbo].[_Reference1710] as subEmpl " +
-                            "INNER JOIN [" + database + "].[dbo].[_Reference17] as empl " +
-                            "ON subEmpl._Fld4750RRef = empl._IDRRef " +
-                            "WHERE empl._Description=VALUES(?)";
+            String selectSql = new StringBuilder()
+                    .append("SELECT subEmpl._Description as subEmplName, empl._Description as emplName ")
+                    .append("FROM [").append(database).append("].[dbo].[_Reference1710] as subEmpl ")
+                    .append("INNER JOIN [").append(database).append("].[dbo].[_Reference17] as empl ")
+                    .append("ON subEmpl._Fld4750RRef = empl._IDRRef ")
+                    .append("WHERE empl._Description=VALUES(?)").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
             ResultSet resultSet = statement.executeQuery(selectSql);

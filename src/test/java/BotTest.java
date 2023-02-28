@@ -1,6 +1,7 @@
 import com.doctrine7.tgbot.config.BotConfig;
 import com.doctrine7.tgbot.model.*;
 import com.doctrine7.tgbot.model.exceptions.CustomBannedUserException;
+import com.doctrine7.tgbot.service.EmployeeService;
 import com.doctrine7.tgbot.service.TelegramBot;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -30,6 +31,8 @@ public class BotTest {
     SQLDatabaseConnection sqlDatabaseConnection;
     @MockBean
     PasswordGenerator passwordGenerator = new PasswordGenerator();
+    @MockBean
+    EmployeeService employeeService;
     TelegramBot telegramBot;
     User user1; //banned
     User user2; //0 employees
@@ -60,7 +63,7 @@ public class BotTest {
         BotConfig botConfig = new BotConfig();
         botConfig.setBotName(null);
         botConfig.setToken(null);
-        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, sqlDatabaseConnection, passwordGenerator);
+        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, employeeService, sqlDatabaseConnection, passwordGenerator);
 
     }
 
@@ -165,7 +168,7 @@ public class BotTest {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
         Mockito.when(employeeRepository.findAllByUserIdIs(3L))
-                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
+                .thenReturn(Set.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
         Message message = new Message();
@@ -189,7 +192,7 @@ public class BotTest {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
         Mockito.when(employeeRepository.findAllByUserIdIs(3L))
-                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
+                .thenReturn(Set.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
         Message message = new Message();

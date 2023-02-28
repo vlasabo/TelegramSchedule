@@ -1,10 +1,8 @@
 package com.doctrine7.tgbot.service;
 
-import com.doctrine7.tgbot.model.EmployeeRepository;
 import com.doctrine7.tgbot.model.Shedule;
 import com.doctrine7.tgbot.model.User;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,17 +11,17 @@ import java.util.Objects;
 @Slf4j
 public class SheduleService {
 	private final List<Shedule> allShedule;
-	@Autowired
-	private final EmployeeRepository employeeRepository;
+	private final EmployeeService employeeService;
 
-	public SheduleService(List<Shedule> allShedule, EmployeeRepository employeeRepository) {
+
+	public SheduleService(List<Shedule> allShedule, EmployeeService employeeService) {
 		this.allShedule = allShedule;
-		this.employeeRepository = employeeRepository;
+		this.employeeService = employeeService;
 	}
 
 	public List<Shedule> actualizeByEmployee(User user) {
 		List<Shedule> actual = new ArrayList<>();
-		var userEmployeesList = user.getEmployees(employeeRepository);
+		var userEmployeesList = employeeService.getEmployeesNames(user.getChatId());
 		if (user.getSeparatedShedule() == null || !user.getSeparatedShedule()) {
 			for (Shedule shedule : allShedule) {
 				if (userEmployeesList.contains(shedule.getEmployee())) {

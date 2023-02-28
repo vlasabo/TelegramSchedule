@@ -27,6 +27,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Slf4j
@@ -36,6 +37,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig config;
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmployeeService employeeService;
 
     private final SQLDatabaseConnection connection;
     private final PasswordGenerator passwordGenerator;
@@ -296,7 +298,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 log.warn("new incorrect attempt to add employee {} for chat id {} ", employee, chatId);
                 return;
             }
-            if (user.getEmployees(employeeRepository).contains(employee)) {
+            Set<String> userEmployees = employeeService.getEmployeesNames(user.getChatId());
+            if (userEmployees.contains(employee)) {
                 userRepository.save(user);
                 sendMessageToId(chatId, String.format("Сотрудник %s уже добавлен!", employee));
                 return;
@@ -307,7 +310,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (listOfRelatedEmployees.size() > 0) {
                 listOfRelatedEmployees.forEach(u -> user.addEmployee(u, employeeRepository));
             }
-            if (user.getEmployees(employeeRepository).size() > 1) {
+            if (userEmployees.size() >= 1) {
                 sendMessageToId(chatId, "так же получаете расписание для: \n" + user.allEmployeesToMessage(employeeRepository));
             }
             userRepository.save(user);
@@ -328,7 +331,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String answerText = "расписание на " + date + " для id=" + chatId + "\n";
         log.warn("Requesting shedule for date {} by user {}, chat id = {}", date, user.getUserName(), chatId);
         List<Shedule> answerList = connection.sendScheduleRequest(date);
-        SheduleService sheduleService = new SheduleService(answerList, employeeRepository);
+        SheduleService sheduleService = new SheduleService(answerList, employeeService);
         StringBuilder sb = new StringBuilder();
         var listShedule = sheduleService.actualizeByEmployee(user);
         listShedule.forEach(sh -> sb.append(sh.toString()));

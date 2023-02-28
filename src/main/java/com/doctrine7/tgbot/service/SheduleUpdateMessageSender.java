@@ -1,6 +1,5 @@
 package com.doctrine7.tgbot.service;
 
-import com.doctrine7.tgbot.model.EmployeeRepository;
 import com.doctrine7.tgbot.model.User;
 import com.doctrine7.tgbot.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +8,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -22,10 +22,11 @@ public class SheduleUpdateMessageSender {
     private String patient;
     private String time;
     private boolean delete;
+    private EmployeeService employeeService;
 
 
     public SheduleUpdateMessageSender(String lastEmployee, String lastProcedure, String lastPatient, String lastTime,
-                                      String employee, String procedure, String patient, String time) {
+                                      String employee, String procedure, String patient, String time, EmployeeService employeeService) {
         this.lastEmployee = lastEmployee;
         this.lastProcedure = lastProcedure;
         this.lastPatient = lastPatient;
@@ -35,14 +36,16 @@ public class SheduleUpdateMessageSender {
         this.patient = patient;
         this.time = time;
         this.delete = false;
+        this.employeeService = employeeService;
     }
 
-    public SheduleUpdateMessageSender(String employee, String procedure, String patient, String time) {
+    public SheduleUpdateMessageSender(String employee, String procedure, String patient, String time, EmployeeService employeeService) {
         this.employee = employee;
         this.procedure = procedure;
         this.patient = patient;
         this.time = time;
         this.delete = true;
+        this.employeeService = employeeService;
     }
 
     private Map<String, String> getMessagesWhatsHappening() {
@@ -104,7 +107,7 @@ public class SheduleUpdateMessageSender {
     }
 
 
-    public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository, EmployeeRepository employeeRepository)
+    public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository)
             throws TelegramApiException {
         var mapResultEmployeeMessage = getMessagesWhatsHappening();
         if (mapResultEmployeeMessage.size() == 0) {
@@ -114,11 +117,13 @@ public class SheduleUpdateMessageSender {
         List<String> allEmployeesWhoNeedMessage = mapResultEmployeeMessage.keySet().stream()
                 .distinct()
                 .collect(Collectors.toList());
-        List<Long> allUsersIdsWhoNeedMessage = employeeRepository.findAllByEmployeeIn(allEmployeesWhoNeedMessage);
+        List<Long> allUsersIdsWhoNeedMessage = employeeService.findAllByEmployeeIn(allEmployeesWhoNeedMessage);
         var allUsersIterable = userRepository.findAllByChatIdIn(allUsersIdsWhoNeedMessage);
-        for (Map.Entry<String, String> entry : mapResultEmployeeMessage.entrySet()) {
+
+        for (Map.Entry<String, String> entry : mapResultEmployeeMessage.entrySet()) { //TODO: это переписать
             for (User user : allUsersIterable) {
-                if (user.getEmployees(employeeRepository).contains(entry.getKey())) {
+                Set<String> userEmployees = employeeService.getEmployeesNames(user.getChatId());
+                if (userEmployees.contains(entry.getKey())) {
                     telegramBot.sendMessageToId(user.getChatId(), entry.getValue());
                     log.info("!sending a message about changes in the schedule to the employee {}, message = {}",
                             entry.getKey(), entry.getValue());

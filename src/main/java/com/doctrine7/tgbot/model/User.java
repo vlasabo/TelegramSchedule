@@ -1,6 +1,5 @@
 package com.doctrine7.tgbot.model;
 
-import com.google.common.collect.Streams;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.sql.Timestamp;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -28,6 +25,7 @@ public class User {
     private Timestamp registeredAt;
     private int registrationAttempts;
     private Boolean separatedShedule;
+    //TODO: это переписать. Всю работу с сотрудниками унести в сервис
 
     public void addEmployee(String employeeName, EmployeeRepository employeeRepository) {
         Employee emp = new Employee();
@@ -64,8 +62,4 @@ public class User {
         return sb.toString();
     }
 
-    public Set<String> getEmployees(EmployeeRepository employeeRepository) {
-        return Streams.stream(employeeRepository.findAll()).distinct().filter(x -> Objects.equals(x.getUserId(), this.chatId))
-                .map(Employee::getEmployee).collect(Collectors.toSet());
-    }
 }

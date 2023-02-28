@@ -106,7 +106,7 @@ public class SQLDatabaseConnection {
         return "";
     }
 
-    public List<String> checkRelatedEmployees(String name) {
+    public List<String> findRelatedEmployeesInDatabase(String name) {
         List<String> relatedEmployees = new ArrayList<>();
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);

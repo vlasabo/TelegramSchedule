@@ -8,5 +8,7 @@ import java.util.Set;
 public interface EmployeeRepository extends CrudRepository<Employee, Long> {
     Set<Employee> findAllByUserIdIs(long userId);
 
-    List<Long> findAllByEmployeeIn(List<String> employees);
+    List<Employee> findAllByUserIdIsOrderByName(long userId);
+
+    List<Long> findAllByNameIn(List<String> employees);
 }

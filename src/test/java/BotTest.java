@@ -16,8 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -57,14 +57,14 @@ public class BotTest {
         user3.setRegistrationAttempts(0);
         employee = new Employee();
         employee.setId(33L);
-        employee.setEmployee("test employee");
+        employee.setName("test employee");
         employee.setUserId(3L);
 
         BotConfig botConfig = new BotConfig();
         botConfig.setBotName(null);
         botConfig.setToken(null);
-        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, employeeService, sqlDatabaseConnection, passwordGenerator);
-
+        employeeService = new EmployeeService(employeeRepository);
+        telegramBot = new TelegramBot(botConfig, userRepository, employeeService, sqlDatabaseConnection, passwordGenerator);
     }
 
     @Test
@@ -167,8 +167,8 @@ public class BotTest {
     void CorrectDeleteEmployeeFromUser() {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
-        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
-                .thenReturn(Set.of(new Employee(1L, "emp", 3L)));
+        Mockito.when(employeeRepository.findAllByUserIdIsOrderByName(3L))
+                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
         Message message = new Message();
@@ -176,7 +176,7 @@ public class BotTest {
         message.setChat(chat);
         Message messageDelete = new Message();
         messageDelete.setText("Вы получаете расписание для: \n"
-                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                + employeeService.allEmployeesToMessage(3L) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
                 "сотрудника " +
                 "которого удаляем.");
         message.setReplyToMessage(messageDelete);
@@ -191,8 +191,8 @@ public class BotTest {
     void tryToDeleteEmployeeFromUserWithIncorrectNumberAnswerAndExpectNoException() {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
-        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
-                .thenReturn(Set.of(new Employee(1L, "emp", 3L)));
+        Mockito.when(employeeRepository.findAllByUserIdIsOrderByName(3L))
+                .thenReturn(List.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
         Message message = new Message();
@@ -200,7 +200,7 @@ public class BotTest {
         message.setChat(chat);
         Message messageDelete = new Message();
         messageDelete.setText("Вы получаете расписание для: \n"
-                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                + employeeService.allEmployeesToMessage(3L) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
                 "сотрудника " +
                 "которого удаляем.");
         message.setReplyToMessage(messageDelete);

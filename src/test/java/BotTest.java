@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -27,6 +28,8 @@ public class BotTest {
     private EmployeeRepository employeeRepository;
     @Mock
     SQLDatabaseConnection sqlDatabaseConnection;
+    @MockBean
+    PasswordGenerator passwordGenerator = new PasswordGenerator();
     TelegramBot telegramBot;
     User user1; //banned
     User user2; //0 employees
@@ -57,7 +60,7 @@ public class BotTest {
         BotConfig botConfig = new BotConfig();
         botConfig.setBotName(null);
         botConfig.setToken(null);
-        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, sqlDatabaseConnection);
+        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, sqlDatabaseConnection, passwordGenerator);
 
     }
 

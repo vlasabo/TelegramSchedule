@@ -38,6 +38,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final EmployeeRepository employeeRepository;
 
     private final SQLDatabaseConnection connection;
+    private final PasswordGenerator passwordGenerator;
     private static final String REGISTRATION_TEXT = "Введите одним сообщением ОТВЕТОМ НА ЭТО СООБЩЕНИЕ! текущий " +
             "пароль (узнать " +
             "можно у системного администратора) " +
@@ -286,7 +287,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (employee.equals("")) {
                 userRepository.save(user);
                 String textToSend;
-                if (employeeToRequest.equals(message.getText())){
+                if (employeeToRequest.equals(message.getText())) {
                     textToSend = "Вы забыли добавить сотрудника через пробел после пароля";
                 } else {
                     textToSend = String.format("Сотрудник %s не найден в 1С!", employee);
@@ -364,7 +365,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (update.getMessage().isReply()
                 && REGISTRATION_TEXT.equals(update.getMessage().getReplyToMessage().getText())
                 && isRegistered(chatId)) {
-            String password = new PasswordGenerator().getActualPassword();
+            String password = passwordGenerator.getActualPassword();
             if (text.contains(password)) {
                 try {
                     updateUser(chatId, update.getMessage());
@@ -412,7 +413,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return false;
     }
 
-    private ReplyKeyboardMarkup initKeyboard(LocalDate ld) {
+    private ReplyKeyboardMarkup initKeyboard(LocalDate localDate) {
         //Создаем объект будущей клавиатуры и выставляем нужные настройки
         var replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setResizeKeyboard(true); //подгоняем размер
@@ -424,27 +425,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow keyboardRow = new KeyboardRow();
         keyboardRows.add(keyboardRow);
         //Добавляем кнопки с текстом в наш ряд
-        LocalDate endDay = ld.withDayOfMonth(ld.lengthOfMonth());
+        LocalDate endDay = localDate.withDayOfMonth(localDate.lengthOfMonth());
         int i = 0;
-        int kbSize = 0;
-
-        while (ld.getDayOfWeek().getValue() > keyboardRow.size() + 1) { //подгоняем расположение кнопок под календарные дни
-            // недели  начале месяца
+        //подгоняем расположение кнопок под календарные дни недели начала месяца
+        while (localDate.getDayOfWeek().getValue() > keyboardRow.size() + 1) {
             keyboardRow.add(" ");
-            kbSize++;
             i++;
         }
 
-        while (ld.isBefore(endDay) || ld.isEqual(endDay)) {
-            keyboardRow.add(new KeyboardButton(ld.format(DateTimeFormatter.ofPattern("dd.MM"))));
-            kbSize++;
-            ld = ld.plusDays(1);
+        while (localDate.isBefore(endDay) || localDate.isEqual(endDay)) {
+            keyboardRow.add(new KeyboardButton(localDate.format(DateTimeFormatter.ofPattern("dd.MM"))));
+            localDate = localDate.plusDays(1);
             i++;
             if (i >= 7) {
                 keyboardRow = new KeyboardRow();
                 keyboardRows.add(keyboardRow);
                 i = 0;
-                kbSize = 0;
             }
         }
         while (keyboardRow.size() < 7) { //а тут подгонка в конце

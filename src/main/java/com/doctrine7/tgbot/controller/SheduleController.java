@@ -1,7 +1,5 @@
 package com.doctrine7.tgbot.controller;
 
-import com.doctrine7.tgbot.model.EmployeeRepository;
-import com.doctrine7.tgbot.model.UserRepository;
 import com.doctrine7.tgbot.service.EmployeeService;
 import com.doctrine7.tgbot.service.SheduleUpdateMessageSender;
 import com.doctrine7.tgbot.service.TelegramBot;
@@ -20,9 +18,6 @@ public class SheduleController {
 
 	private final TelegramBot telegramBot;
 
-	private final UserRepository userRepository;
-
-	private final EmployeeRepository employeeRepository;
 	private final EmployeeService employeeService;
 
 
@@ -36,7 +31,7 @@ public class SheduleController {
 					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
 		new SheduleUpdateMessageSender(lastEmployee, lastProcedure, lastPatient,
 				lastTime, employee, procedure, patient, time, employeeService)
-				.sendSheduleUpdate(telegramBot, userRepository);
+				.sendSheduleUpdate(telegramBot);
 	}
 
 	@PostMapping
@@ -44,7 +39,7 @@ public class SheduleController {
 	public void delete(@RequestParam String employee, @RequestParam String patient,
 					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
 		new SheduleUpdateMessageSender(employee, procedure, patient, time, employeeService)
-				.sendSheduleUpdate(telegramBot, userRepository);
+				.sendSheduleUpdate(telegramBot);
 	}
 
 }

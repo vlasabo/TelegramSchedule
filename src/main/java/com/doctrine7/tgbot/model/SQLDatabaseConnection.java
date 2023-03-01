@@ -90,8 +90,8 @@ public class SQLDatabaseConnection {
             Connection connection = DriverManager.getConnection(connectionUrl);
             String selectSql = new StringBuilder().append("SELECT _Description ")
                     .append("  FROM [").append(database).append("].[dbo].[_Reference17] as empl ")
-                    .append("  WHERE empl._Fld963!=0x01 /*уволен*/ AND empl._Marked=0x00 /*пометка удаления*/")
-                    .append("  AND empl._Description=VALUES(?)").toString();
+                    .append("  WHERE empl._Fld963!=0x01 AND empl._Marked=0x00 ")
+                    .append("  AND empl._Description=?").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
             ResultSet resultSet = statement.executeQuery();
@@ -115,7 +115,7 @@ public class SQLDatabaseConnection {
                     .append("FROM [").append(database).append("].[dbo].[_Reference1710] as subEmpl ")
                     .append("INNER JOIN [").append(database).append("].[dbo].[_Reference17] as empl ")
                     .append("ON subEmpl._Fld4750RRef = empl._IDRRef ")
-                    .append("WHERE empl._Description=VALUES(?)").toString();
+                    .append("WHERE empl._Description=?").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
             ResultSet resultSet = statement.executeQuery();

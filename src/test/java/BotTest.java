@@ -1,6 +1,7 @@
 import com.doctrine7.tgbot.config.BotConfig;
 import com.doctrine7.tgbot.model.*;
 import com.doctrine7.tgbot.model.exceptions.CustomBannedUserException;
+import com.doctrine7.tgbot.service.EmployeeService;
 import com.doctrine7.tgbot.service.TelegramBot;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,9 @@ public class BotTest {
     @Mock
     SQLDatabaseConnection sqlDatabaseConnection;
     @MockBean
-    PasswordGenerator passwordGenerator = new PasswordGenerator();
+    final PasswordGenerator passwordGenerator = new PasswordGenerator();
+    @MockBean
+    EmployeeService employeeService;
     TelegramBot telegramBot;
     User user1; //banned
     User user2; //0 employees
@@ -54,14 +57,14 @@ public class BotTest {
         user3.setRegistrationAttempts(0);
         employee = new Employee();
         employee.setId(33L);
-        employee.setEmployee("test employee");
+        employee.setName("test employee");
         employee.setUserId(3L);
 
         BotConfig botConfig = new BotConfig();
         botConfig.setBotName(null);
         botConfig.setToken(null);
-        telegramBot = new TelegramBot(botConfig, userRepository, employeeRepository, sqlDatabaseConnection, passwordGenerator);
-
+        employeeService = new EmployeeService(employeeRepository);
+        telegramBot = new TelegramBot(botConfig, userRepository, employeeService, sqlDatabaseConnection, passwordGenerator);
     }
 
     @Test
@@ -164,7 +167,7 @@ public class BotTest {
     void CorrectDeleteEmployeeFromUser() {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
-        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
+        Mockito.when(employeeRepository.findAllByUserIdIsOrderByName(3L))
                 .thenReturn(List.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
@@ -173,7 +176,7 @@ public class BotTest {
         message.setChat(chat);
         Message messageDelete = new Message();
         messageDelete.setText("Вы получаете расписание для: \n"
-                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                + employeeService.allEmployeesToMessage(3L) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
                 "сотрудника " +
                 "которого удаляем.");
         message.setReplyToMessage(messageDelete);
@@ -188,7 +191,7 @@ public class BotTest {
     void tryToDeleteEmployeeFromUserWithIncorrectNumberAnswerAndExpectNoException() {
         Mockito.when(userRepository.findById(3L))
                 .thenReturn(Optional.of(user3));
-        Mockito.when(employeeRepository.findAllByUserIdIs(3L))
+        Mockito.when(employeeRepository.findAllByUserIdIsOrderByName(3L))
                 .thenReturn(List.of(new Employee(1L, "emp", 3L)));
         Chat chat = new Chat();
         chat.setId(3L);
@@ -197,7 +200,7 @@ public class BotTest {
         message.setChat(chat);
         Message messageDelete = new Message();
         messageDelete.setText("Вы получаете расписание для: \n"
-                + user3.allEmployeesToMessage(employeeRepository) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
+                + employeeService.allEmployeesToMessage(3L) + " введите ОТВЕТОМ НА ЭТО СООБЩЕНИЕ номер " +
                 "сотрудника " +
                 "которого удаляем.");
         message.setReplyToMessage(messageDelete);

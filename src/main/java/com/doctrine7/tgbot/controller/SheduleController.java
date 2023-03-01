@@ -1,7 +1,6 @@
 package com.doctrine7.tgbot.controller;
 
-import com.doctrine7.tgbot.model.EmployeeRepository;
-import com.doctrine7.tgbot.model.UserRepository;
+import com.doctrine7.tgbot.service.EmployeeService;
 import com.doctrine7.tgbot.service.SheduleUpdateMessageSender;
 import com.doctrine7.tgbot.service.TelegramBot;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +18,7 @@ public class SheduleController {
 
 	private final TelegramBot telegramBot;
 
-	private final UserRepository userRepository;
-
-	private final EmployeeRepository employeeRepository;
+	private final EmployeeService employeeService;
 
 
 	@PostMapping
@@ -33,16 +30,16 @@ public class SheduleController {
 					   @RequestParam String employee, @RequestParam String patient,
 					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
 		new SheduleUpdateMessageSender(lastEmployee, lastProcedure, lastPatient,
-				lastTime, employee, procedure, patient, time)
-				.sendSheduleUpdate(telegramBot, userRepository, employeeRepository);
+				lastTime, employee, procedure, patient, time, employeeService)
+				.sendSheduleUpdate(telegramBot);
 	}
 
 	@PostMapping
 	@RequestMapping(value = "deleteShedule/")
 	public void delete(@RequestParam String employee, @RequestParam String patient,
 					   @RequestParam String procedure, @RequestParam String time) throws TelegramApiException {
-		new SheduleUpdateMessageSender(employee, procedure, patient, time)
-				.sendSheduleUpdate(telegramBot, userRepository, employeeRepository);
+		new SheduleUpdateMessageSender(employee, procedure, patient, time, employeeService)
+				.sendSheduleUpdate(telegramBot);
 	}
 
 }

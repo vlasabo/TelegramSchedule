@@ -49,7 +49,7 @@ public class SQLDatabaseConnection {
             String stringDate = date.plusYears(2000).format(formatterForRequest);
             String selectSql =
                     new StringBuilder()
-                            .append("SELECT u._Description as procedure, o._Fld1043,")
+                            .append("SELECT u._Description as medicalProcedure, o._Fld1043,")
                             .append(" s._Description as empl, p._Description as patient,")
                             .append(" x._Description as subEmpl ")
                             .append("FROM [").append(database).append("].[dbo].[_InfoRg970] AS o ")
@@ -75,7 +75,7 @@ public class SQLDatabaseConnection {
                         .format(formatterForAnswer)
                         , employee
                         , resultSet.getString("patient")
-                        , resultSet.getString("procedure"));
+                        , resultSet.getString("medicalProcedure"));
                 allShedule.add(shedule);
             }
             return allShedule;
@@ -90,11 +90,11 @@ public class SQLDatabaseConnection {
             Connection connection = DriverManager.getConnection(connectionUrl);
             String selectSql = new StringBuilder().append("SELECT _Description ")
                     .append("  FROM [").append(database).append("].[dbo].[_Reference17] as empl ")
-                    .append("  WHERE empl._Fld963!=0x01 /*уволен*/ AND empl._Marked=0x00 /*пометка удаления*/")
-                    .append("  AND empl._Description=VALUES(?)").toString();
+                    .append("  WHERE empl._Fld963!=0x01 AND empl._Marked=0x00 ")
+                    .append("  AND empl._Description=?").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery(selectSql);
+            ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
                 log.info("new SQL request for add employee {}", name);
@@ -106,20 +106,19 @@ public class SQLDatabaseConnection {
         return "";
     }
 
-    public List<String> checkRelatedEmployees(String name) {
+    public List<String> findRelatedEmployeesInDatabase(String name) {
         List<String> relatedEmployees = new ArrayList<>();
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);
-            String selectSql =
-                    new StringBuilder()
-                            .append("SELECT subEmpl._Description as subEmplName, empl._Description as emplName ")
-                            .append("FROM [").append(database).append("].[dbo].[_Reference1710] as subEmpl ")
-                            .append("INNER JOIN [").append(database).append("].[dbo].[_Reference17] as empl ")
-                            .append("ON subEmpl._Fld4750RRef = empl._IDRRef ")
-                            .append("WHERE empl._Description=VALUES(?)").toString();
+            String selectSql = new StringBuilder()
+                    .append("SELECT subEmpl._Description as subEmplName, empl._Description as emplName ")
+                    .append("FROM [").append(database).append("].[dbo].[_Reference1710] as subEmpl ")
+                    .append("INNER JOIN [").append(database).append("].[dbo].[_Reference17] as empl ")
+                    .append("ON subEmpl._Fld4750RRef = empl._IDRRef ")
+                    .append("WHERE empl._Description=?").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery(selectSql);
+            ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
                 String subEmployee = resultSet.getString("subEmplName");

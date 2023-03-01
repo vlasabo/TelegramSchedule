@@ -35,7 +35,7 @@ public class AppointmentsListService {
 	private void sendCreateNotify(AppointmentsList document, long groupId) {
 		StringBuilder messageText = new StringBuilder(NEW_DOCUMENT);
 		messageText.append(" на пациента ")
-				.append("*").append(document.getPatient()).append("*")
+				.append(document.getPatient())
 				.append(". Врачи: \n")
 				.append("невролог: ")
 				.append("".equals(document.getNeurologist()) ? "-" : document.getNeurologist()).append("\n")
@@ -56,7 +56,7 @@ public class AppointmentsListService {
 		StringBuilder messageText = new StringBuilder(OLD_DOCUMENT);
 		messageText.append(document.getId())
 				.append(" на пациента ")
-				.append("*").append(document.getPatient()).append("*").append("\n")
+				.append(document.getPatient()).append("\n")
 				.append("Отредактировал ").append(document.getEditor());
 
 		try {

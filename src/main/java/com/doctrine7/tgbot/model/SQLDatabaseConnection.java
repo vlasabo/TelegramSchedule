@@ -49,7 +49,7 @@ public class SQLDatabaseConnection {
             String stringDate = date.plusYears(2000).format(formatterForRequest);
             String selectSql =
                     new StringBuilder()
-                            .append("SELECT u._Description as procedure, o._Fld1043,")
+                            .append("SELECT u._Description as medicalProcedure, o._Fld1043,")
                             .append(" s._Description as empl, p._Description as patient,")
                             .append(" x._Description as subEmpl ")
                             .append("FROM [").append(database).append("].[dbo].[_InfoRg970] AS o ")
@@ -75,7 +75,7 @@ public class SQLDatabaseConnection {
                         .format(formatterForAnswer)
                         , employee
                         , resultSet.getString("patient")
-                        , resultSet.getString("procedure"));
+                        , resultSet.getString("medicalProcedure"));
                 allShedule.add(shedule);
             }
             return allShedule;

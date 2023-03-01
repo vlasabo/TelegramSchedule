@@ -32,7 +32,9 @@ public class EmployeeService {
 
 
     public List<Long> findAllByEmployeeIn(List<String> allEmployeesWhoNeedMessage) {
-        return employeeRepository.findAllByNameIn(allEmployeesWhoNeedMessage);
+        return employeeRepository.findAllByNameIn(allEmployeesWhoNeedMessage).stream()
+                .map(Employee::getUserId)
+                .collect(Collectors.toList());
     }
 
     public void addEmployee(long userId, String employeeName) {

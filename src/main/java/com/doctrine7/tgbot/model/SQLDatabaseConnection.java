@@ -5,6 +5,7 @@ import com.doctrine7.tgbot.config.ResponseToSqlConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -37,7 +38,7 @@ public class SQLDatabaseConnection {
                 + "loginTimeout=30;";
     }
 
-
+    @Transactional(readOnly = true)
     public List<Shedule> sendScheduleRequest(LocalDate date) {
         try {
             Connection connection = DriverManager.getConnection(connectionUrl);

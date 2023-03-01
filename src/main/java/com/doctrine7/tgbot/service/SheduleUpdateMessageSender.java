@@ -1,7 +1,5 @@
 package com.doctrine7.tgbot.service;
 
-import com.doctrine7.tgbot.model.User;
-import com.doctrine7.tgbot.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -63,7 +61,7 @@ public class SheduleUpdateMessageSender {
             return employeeAndMessage; //изменили комментарий, подтверждение или что-то еще несущественное для отправки
         }
 
-        if (lastPatient.equals("") & lastProcedure.equals("")) {//Добавление пациента изменением пустой клетки
+        if (lastPatient.equals("") & lastProcedure.equals("")) { //Добавление пациента изменением пустой клетки
             // расписания или добавление новой процедуры
             sb.append("Пациент ").append(patient).append(" был добавлен на ").append(time).append(", процедура ")
                     .append(procedure);
@@ -107,9 +105,9 @@ public class SheduleUpdateMessageSender {
     }
 
 
-    public void sendSheduleUpdate(TelegramBot telegramBot, UserRepository userRepository)
+    public void sendSheduleUpdate(TelegramBot telegramBot)
             throws TelegramApiException {
-        var mapResultEmployeeMessage = getMessagesWhatsHappening();
+        Map<String, String> mapResultEmployeeMessage = getMessagesWhatsHappening(); //<employee, message>
         if (mapResultEmployeeMessage.size() == 0) {
             return;
         }
@@ -118,15 +116,16 @@ public class SheduleUpdateMessageSender {
                 .distinct()
                 .collect(Collectors.toList());
         List<Long> allUsersIdsWhoNeedMessage = employeeService.findAllByEmployeeIn(allEmployeesWhoNeedMessage);
-        var allUsersIterable = userRepository.findAllByChatIdIn(allUsersIdsWhoNeedMessage);
+        Map<Long, Set<String>> userIdsAndEmployees =
+                employeeService.getEmployeesNamesForListUsers(allUsersIdsWhoNeedMessage); //<userId, employeesNames>
 
-        for (Map.Entry<String, String> entry : mapResultEmployeeMessage.entrySet()) { //TODO: это переписать
-            for (User user : allUsersIterable) {
-                Set<String> userEmployees = employeeService.getEmployeesNames(user.getChatId());
-                if (userEmployees.contains(entry.getKey())) {
-                    telegramBot.sendMessageToId(user.getChatId(), entry.getValue());
+        for (Map.Entry<String, String> employeeAndMessage : mapResultEmployeeMessage.entrySet()) {
+            for (Map.Entry<Long, Set<String>> idAndSetEmployees : userIdsAndEmployees.entrySet()) {
+                Set<String> userEmployees = idAndSetEmployees.getValue();
+                if (userEmployees.contains(employeeAndMessage.getKey())) {
+                    telegramBot.sendMessageToId(idAndSetEmployees.getKey(), employeeAndMessage.getValue());
                     log.info("!sending a message about changes in the schedule to the employee {}, message = {}",
-                            entry.getKey(), entry.getValue());
+                            employeeAndMessage.getKey(), employeeAndMessage.getValue());
                 }
             }
         }

@@ -11,4 +11,5 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
     List<Employee> findAllByUserIdIsOrderByName(long userId);
 
     List<Long> findAllByNameIn(List<String> employees);
+
 }

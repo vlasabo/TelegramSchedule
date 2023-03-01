@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -16,15 +18,18 @@ import java.util.stream.Collectors;
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
 
-    public Set<Employee> getEmployees(long userId) {
-        return employeeRepository.findAllByUserIdIs(userId);
-    }
-
     public Set<String> getEmployeesNames(long userId) {
         return employeeRepository.findAllByUserIdIs(userId).stream()
                 .map(Employee::getName)
                 .collect(Collectors.toSet());
     }
+
+    public Map<Long, Set<String>> getEmployeesNamesForListUsers(List<Long> usersIds) {
+        Map<Long, Set<String>> result = new HashMap<>();
+        usersIds.forEach(id -> result.put(id, getEmployeesNames(id)));
+        return result;
+    }
+
 
     public List<Long> findAllByEmployeeIn(List<String> allEmployeesWhoNeedMessage) {
         return employeeRepository.findAllByNameIn(allEmployeesWhoNeedMessage);

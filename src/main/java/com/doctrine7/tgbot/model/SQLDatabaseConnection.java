@@ -94,7 +94,7 @@ public class SQLDatabaseConnection {
                     .append("  AND empl._Description=VALUES(?)").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery(selectSql);
+            ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
                 log.info("new SQL request for add employee {}", name);
@@ -118,7 +118,7 @@ public class SQLDatabaseConnection {
                     .append("WHERE empl._Description=VALUES(?)").toString();
             PreparedStatement statement = connection.prepareStatement(selectSql);
             statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery(selectSql);
+            ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
                 String subEmployee = resultSet.getString("subEmplName");

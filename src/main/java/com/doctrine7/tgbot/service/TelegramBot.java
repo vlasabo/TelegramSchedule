@@ -39,7 +39,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final EmployeeService employeeService;
 
     private final SQLDatabaseConnection connection;
-    private final PasswordGenerator passwordGenerator;
     private static final String REGISTRATION_TEXT = "Введите одним сообщением ОТВЕТОМ НА ЭТО СООБЩЕНИЕ! текущий " +
             "пароль (узнать " +
             "можно у системного администратора) " +
@@ -363,6 +362,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (update.getMessage().isReply()
                 && REGISTRATION_TEXT.equals(update.getMessage().getReplyToMessage().getText())
                 && isRegistered(chatId)) {
+            PasswordGenerator passwordGenerator = new PasswordGenerator();
             String password = passwordGenerator.getActualPassword();
             if (text.contains(password)) {
                 try {
@@ -376,6 +376,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 user.setRegistrationAttempts(user.getRegistrationAttempts() + 1);
                 userRepository.save(user);
                 log.error("INCORRECT PASSWORD from user with chat id {}", chatId);
+                log.error("entered password is \"{}\", correct is \"{}\"", text, passwordGenerator.getActualPassword());
                 try {
                     String textToSend =
                             REGISTRATION_ATTEMPTS - user.getRegistrationAttempts() > 0 ?

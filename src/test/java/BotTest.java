@@ -64,7 +64,7 @@ public class BotTest {
         botConfig.setBotName(null);
         botConfig.setToken(null);
         employeeService = new EmployeeService(employeeRepository);
-        telegramBot = new TelegramBot(botConfig, userRepository, employeeService, sqlDatabaseConnection, passwordGenerator);
+        telegramBot = new TelegramBot(botConfig, userRepository, employeeService, sqlDatabaseConnection);
     }
 
     @Test

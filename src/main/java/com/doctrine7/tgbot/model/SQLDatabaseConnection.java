@@ -10,7 +10,6 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +43,7 @@ public class SQLDatabaseConnection {
             Statement statement = connection.createStatement();
             DateTimeFormatter formatterForRequest = DateTimeFormatter.ofPattern("yyyyMMdd");
             DateTimeFormatter formatterForParsing = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            DateTimeFormatter formatterForAnswer = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT);
+            DateTimeFormatter formatterForAnswer = DateTimeFormatter.ofPattern("HH:mm");
             //+2000 из-за особенностей хранения дат 1С в MSSQL
             String stringDate = date.plusYears(2000).format(formatterForRequest);
             String selectSql =
